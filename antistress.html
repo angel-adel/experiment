@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Ádel — Антистресс</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4a3b8a 100%);
+            background-size: 400% 400%;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            font-family: 'Georgia', serif;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* ВОЛНЫ */
+        .wave-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+        }
+        
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: repeat-x;
+            animation: waveMove 10s linear infinite;
+        }
+        
+        .wave:nth-child(2) {
+            bottom: 10px;
+            animation: waveMove 15s linear infinite reverse;
+            opacity: 0.5;
+        }
+        
+        .wave:nth-child(3) {
+            bottom: 20px;
+            animation: waveMove 20s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes waveMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        /* ПЛАВАЮЩИЕ ЧАСТИЦЫ */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+        }
+        
+        /* ИНТЕРАКТИВНЫЕ ТОЧКИ (при клике) */
+        .click-point {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: expandFade 1.5s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes expandFade {
+            0% { 
+                transform: scale(0); 
+                opacity: 1;
+            }
+            100% { 
+                transform: scale(4); 
+                opacity: 0;
+            }
+        }
+        
+        /* ДЫХАТЕЛЬНЫЙ КРУГ */
+        .breathing-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        
+        .breathing-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: breathe 8s ease-in-out infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.1em;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .breathing-circle:active {
+            transform: scale(0.95);
+        }
+        
+        @keyframes breathe {
+            0%, 100% { 
+                transform: scale(1); 
+                opacity: 0.6;
+            }
+            50% { 
+                transform: scale(2.5); 
+                opacity: 1;
+            }
+        }
+        
+        /* ЛЕТАЮЩИЕ АНГЕЛЫ (силуэты) */
+        .angel {
+            position: absolute;
+            font-size: 2em;
+            opacity: 0.15;
+            animation: flyAngel 20s linear infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes flyAngel {
+            0% { 
+                transform: translateX(-100px) translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateX(25vw) translateY(-50px) rotate(5deg);
+            }
+            50% {
+                transform: translateX(50vw) translateY(0) rotate(0deg);
+            }
+            75% {
+                transform: translateX(75vw) translateY(50px) rotate(-5deg);
+            }
+            100% {
+                transform: translateX(calc(100vw + 100px)) translateY(0) rotate(0deg);
+            }
+        }
+        
+        /* ЗАГОЛОВОК */
+        .title {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 2em;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+            text-align: center;
+        }
+        
+        .subtitle {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1em;
+            z-index: 10;
+            text-align: center;
+        }
+        
+        /* ИНСТРУКЦИЯ */
+        .instruction {
+            position: absolute;
+            bottom: 220px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95em;
+            text-align: center;
+            z-index: 10;
+            padding: 0 20px;
+        }
+        
+        /* ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ */
+        .mode-switch {
+            position: absolute;
+            bottom: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .mode-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 25px;
+            color: white;
+            font-size: 0.9em;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: white;
+        }
+        
+        .mode-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* ПАДАЮЩИЕ ЗВЁЗДЫ */
+        .shooting-star {
+            position: absolute;
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.8), transparent);
+            animation: shoot 3s linear infinite;
+            opacity: 0;
+        }
+        
+        @keyframes shoot {
+            0% {
+                transform: translateX(0) translateY(0) rotate(45deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(500px) translateY(500px) rotate(45deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">🕊️ Ádel</h1>
+    <p class="subtitle">Антистресс</p>
+    
+    <!-- ДЫХАТЕЛЬНЫЙ КРУГ -->
+    <div class="breathing-container">
+        <div class="breathing-circle" id="breathText">
+            <span>Дыши...</span>
+        </div>
+    </div>
+    
+    <p class="instruction">Касайся экрана — создавай волны ✨</p>
+    
+    <!-- ПЕРЕКЛЮЧАТЕЛЬ -->
+    <div class="mode-switch">
+        <button class="mode-btn active" onclick="setMode('calm')">Спокойствие</button>
+        <button class="mode-btn" onclick="setMode('active')">Активность</button>
+    </div>
+    
+    <!-- ВОЛНЫ -->
+    <div class="wave-container">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+    
+    <!-- ЛЕТАЮЩИЕ АНГЕЛЫ -->
+    <div class="angel" style="top: 20%; animation-delay: 0s;">🕊️</div>
+    <div class="angel" style="top: 40%; animation-delay: 7s;">🕊️</div>
+    <div class="angel" style="top: 60%; animation-delay: 14s;">🕊️</div>
+
+    <script>
+        // ТЕКУЩИЙ РЕЖИМ
+        let currentMode = 'calm';
+        let particles = [];
+        
+        // СОЗДАНИЕ ЧАСТИЦ
+        function createParticle(x, y) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.width = Math.random() * 15 + 5 + 'px';
+            particle.style.height = particle.style.width;
+            document.body.appendChild(particle);
+            
+            // Анимация движения
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 2 + 1;
+            const vx = Math.cos(angle) * velocity;
+            const vy = Math.sin(angle) * velocity;
+            
+            let posX = x;
+            let posY = y;
+            let opacity = 1;
+            
+            function animate() {
+                posX += vx;
+                posY += vy;
+                opacity -= 0.01;
+                
+                particle.style.left = posX + 'px';
+                particle.style.top = posY + 'px';
+                particle.style.opacity = opacity;
+                
+                if (opacity > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    particle.remove();
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // КЛИК/КОСНИСЬ ЭКРАНА
+        document.addEventListener('click', function(e) {
+            // Создаём круги
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const point = document.createElement('div');
+                    point.className = 'click-point';
+                    point.style.left = (e.clientX - 10) + 'px';
+                    point.style.top = (e.clientY - 10) + 'px';
+                    document.body.appendChild(point);
+                    setTimeout(() => point.remove(), 1500);
+                }, i * 200);
+            }
+            
+            // Создаём частицы
+            for (let i = 0; i < 8; i++) {
+                createParticle(e.clientX, e.clientY);
+            }
+            
+            // Падающая звезда
+            if (Math.random() > 0.7) {
+                createShootingStar();
+            }
+        });
+        
+        // ПАДАЮЩАЯ ЗВЕЗДА
+        function createShootingStar() {
+            const star = document.createElement('div');
+            star.className = 'shooting-star';
+            star.style.left = Math.random() * window.innerWidth + 'px';
+            star.style.top = Math.random() * window.innerHeight / 2 + 'px';
+            document.body.appendChild(star);
+            setTimeout(() => star.remove(), 3000);
+        }
+        
+        // ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (mode === 'active') {
+                // Ускоряем анимации
+                document.body.style.animationDuration = '5s';
+            } else {
+                document.body.style.animationDuration = '15s';
+            }
+        }
+        
+        // АВТОМАТИЧЕСКИЕ ЧАСТИЦЫ
+        function autoParticles() {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            createParticle(x, y);
+            
+            const delay = currentMode === 'calm' ? 2000 : 500;
+            setTimeout(autoParticles, delay);
+        }
+        
+        // ДЫХАТЕЛЬНЫЙ ТЕКСТ
+        const breathText = document.getElementById('breathText');
+        setInterval(() => {
+            breathText.innerHTML = '<span>Вдох...</span>';
+            setTimeout(() => {
+                breathText.innerHTML = '<span>Выдох...</span>';
+            }, 4000);
+        }, 8000);
+        
+        // ЗАПУСК
+        autoParticles();
+        
+        // ПЕРИОДИЧЕСКИЕ ЗВЁЗДЫ
+        setInterval(() => {
+            if (Math.random() > 0.6) {
+                createShootingStar();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
