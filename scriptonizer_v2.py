@@ -196,13 +196,20 @@ class ScriptonizerApp:
         
         tk.Button(btn_frame, text="✏️", command=lambda: self.edit_script(index), width=3, bg="#FF9800", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=2)
         tk.Button(btn_frame, text="🗑️", command=lambda: self.delete_script(index), width=3, bg="#f44336", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=2)
-
-    def copy_to_clipboard(self, text):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(text)
-        self.root.update()
-        # Всплывающее уведомление можно добавить, но чтобы не мелькало - просто копируем
-
+def copy_to_clipboard(self, text):
+    import pyautogui
+    import time
+    
+    # Копируем в буфер
+    self.root.clipboard_clear()
+    self.root.clipboard_append(text)
+    self.root.update()
+    
+    # Небольшая пауза, чтобы буфер успел обновиться
+    time.sleep(0.1)
+    
+    # Эмулируем нажатие Ctrl+V для вставки
+    pyautogui.hotkey('ctrl', 'v')
     # --- РЕЖИМЫ ---
     def toggle_topmost(self):
         is_top = self.root.attributes('-topmost')
