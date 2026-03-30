@@ -416,21 +416,24 @@ def copy_to_clipboard(self, text):
         return []
 
     def save_config(self, config):
-        self.config = config
+    self.config = config
+    try:
         with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(config, f, ensure_ascii=False, indent=2)
         self.apply_config()
         self.refresh_scripts()
+    except Exception as e:
+        messagebox.showerror("Ошибка", f"Не удалось сохранить настройки: {e}")
 
-    def load_config(self):
-        if os.path.exists(CONFIG_FILE):
-            try:
-                with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except:
-                return {}
-        return {}
-
+def load_config(self):
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Ошибка загрузки конфига: {e}")
+            return {}
+    return {}
 if __name__ == "__main__":
     root = tk.Tk()
     app = ScriptonizerApp(root)
