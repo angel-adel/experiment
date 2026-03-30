@@ -422,7 +422,7 @@ def copy_to_clipboard(self, text):
                 json.dump(config, f, ensure_ascii=False, indent=2)
             self.apply_config()
             self.refresh_scripts()
-       except Exception as e:
+        except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось сохранить настройки: {e}")
 
 def load_config(self):
