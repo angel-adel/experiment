@@ -206,7 +206,7 @@ class WorkTimeTracker:
         self.cursor.execute('SELECT * FROM employees')
         for row in self.cursor.fetchall():
             self.emp_tree.insert('', 'end', values=row)
-        def create_schedule_tab(self):
+    def create_schedule_tab(self):
         """Вкладка графика"""
         # Выбор месяца
         control_frame = ttk.Frame(self.schedule_frame)
