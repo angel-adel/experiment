@@ -298,7 +298,7 @@ class WorkTimeTracker:
         self.current_month = datetime.now().month
         self.current_year = datetime.now().year
         
-     def apply_colors(self):
+    def apply_colors(self):
         """Применить цветовую заливку к строкам"""
         for item in self.schedule_tree.get_children():
             values = self.schedule_tree.item(item)['values']
