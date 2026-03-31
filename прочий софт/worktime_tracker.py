@@ -316,7 +316,60 @@ class WorkTimeTracker:
                 self.schedule_tree.item(item, tags=(tag,))
             else:
                 self.schedule_tree.item(item, tags=('shift_',))
-    
+    def load_schedule(self):
+        """Загрузить график сотрудников"""
+        try:
+            self.current_month = int(self.month_var.get())
+            self.current_year = int(self.year_var.get())
+        except:
+            messagebox.showerror("Ошибка", "Неверный формат месяца или года!")
+            return
+        
+        # Очищаем таблицу
+        for item in self.schedule_tree.get_children():
+            self.schedule_tree.delete(item)
+        
+        # Получаем количество дней в месяце
+        days_in_month = calendar.monthrange(self.current_year, self.current_month)[1]
+        
+        # Загружаем сотрудников
+        self.cursor.execute('SELECT id, name, position, tab_number FROM employees')
+        employees = self.cursor.fetchall()
+        
+        if not employees:
+            messagebox.showinfo("Инфо", "Сначала добавьте сотрудников!")
+            return
+        
+        # Создаем строки для каждого сотрудника
+        for emp in employees:
+            emp_id, name, position, tab_num = emp
+            emp_display = f"{name} (таб. {tab_num})"
+            
+            # Загружаем существующие смены
+            shifts = {}
+            self.cursor.execute('''
+                SELECT date, shift_type, hours FROM shifts 
+                WHERE employee_id = ? AND date LIKE ?
+            ''', (emp_id, f"{self.current_year}-{self.current_month:02d}%"))
+            
+            for shift in self.cursor.fetchall():
+                day = int(shift[0].split('-')[2])
+                shifts[day] = (shift[1], shift[2])
+            
+            # Создаем значения для строки
+            values = [emp_display]
+            for day in range(1, 32):
+                if day <= days_in_month and day in shifts:
+                    values.append(shifts[day][0])
+                else:
+                    values.append('')
+            
+            self.schedule_tree.insert('', 'end', values=values)
+        
+        # Применяем цвета
+        self.apply_colors()
+        
+        messagebox.showinfo("Успех", f"Загружено {len(employees)} сотрудников")
     def on_cell_double_click(self, event):
         """Обработка двойного клика по ячейке"""
         region = self.schedule_tree.identify("region", event.x, event.y)
@@ -427,9 +480,9 @@ class WorkTimeTracker:
         """Сгенерировать табель"""
         messagebox.showinfo("Инфо", "Табель будет сформирован здесь!")
 def main():
-    root = tk.Tk()
-    app = WorkTimeTracker(root)
-    root.mainloop()
+        root = tk.Tk()
+        app = WorkTimeTracker(root)
+        root.mainloop()
 
 if __name__ == "__main__":
     main()
