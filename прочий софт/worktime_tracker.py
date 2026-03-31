@@ -467,6 +467,18 @@ class WorkTimeTracker:
         
         self.conn.commit()
         messagebox.showinfo("Успех", f"Сохранено {saved_count} записей!")
+    def create_timesheet_tab(self):
+        """Вкладка табеля"""
+        ttk.Label(self.timesheet_frame, 
+                 text="Здесь будет автоматическая генерация табеля",
+                 font=('Arial', 12)).pack(pady=50)
+        
+        ttk.Button(self.timesheet_frame, text="Сформировать табель", 
+                  command=self.generate_timesheet).pack(pady=10)
+        
+    def generate_timesheet(self):
+        """Сгенерировать табель"""
+        messagebox.showinfo("Инфо", "Табель будет сформирован здесь!")
 def main():
     root = tk.Tk()
     app = WorkTimeTracker(root)
