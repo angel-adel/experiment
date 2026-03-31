@@ -10,8 +10,9 @@ class WorkTimeTracker:
         self.root.title("Учет рабочего времени - от Димы")
         self.root.geometry("1200x700")
         
-        # Инициализация БД
         self.editing_id = None
+        
+        # Инициализация БД
         self.init_database()
         
         # Создаем интерфейс
@@ -206,6 +207,7 @@ class WorkTimeTracker:
         self.cursor.execute('SELECT * FROM employees')
         for row in self.cursor.fetchall():
             self.emp_tree.insert('', 'end', values=row)
+        
     def create_schedule_tab(self):
         """Вкладка графика"""
         # Выбор месяца
@@ -289,8 +291,8 @@ class WorkTimeTracker:
         self.schedule_tree.tag_configure('shift_УВ', background='#FF6B6B')
         self.schedule_tree.tag_configure('shift_', background='white')
         
-        # Привязка события изменения ячейки
-        self.schedule_tree.bind('<Double-1>', self.on_cell_double_click)
+        # Привязка события ПРАВОГО клика
+        self.schedule_tree.bind('<Button-3>', self.on_right_click)
         
         # Типы смен
         self.shift_types = ['Я', 'В', 'ОТ', 'Б', 'НД', 'УВ', '']
@@ -298,24 +300,6 @@ class WorkTimeTracker:
         self.current_month = datetime.now().month
         self.current_year = datetime.now().year
         
-    def apply_colors(self):
-        """Применить цветовую заливку к строкам"""
-        for item in self.schedule_tree.get_children():
-            values = self.schedule_tree.item(item)['values']
-            # Определяем доминирующий тип смены за месяц
-            shifts_count = {}
-            for day in range(1, 32):
-                if day < len(values):
-                    shift = values[day]
-                    shifts_count[shift] = shifts_count.get(shift, 0) + 1
-            
-            # Находим самый частый тип смены
-            if shifts_count:
-                main_shift = max(shifts_count, key=shifts_count.get)
-                tag = f'shift_{main_shift}'
-                self.schedule_tree.item(item, tags=(tag,))
-            else:
-                self.schedule_tree.item(item, tags=('shift_',))
     def load_schedule(self):
         """Загрузить график сотрудников"""
         try:
@@ -370,24 +354,42 @@ class WorkTimeTracker:
         self.apply_colors()
         
         messagebox.showinfo("Успех", f"Загружено {len(employees)} сотрудников")
-    def on_cell_double_click(self, event):
-        """Обработка двойного клика по ячейке"""
-        region = self.schedule_tree.identify("region", event.x, event.y)
-        if region != "cell":
-            return
         
+    def apply_colors(self):
+        """Применить цветовую заливку к строкам"""
+        for item in self.schedule_tree.get_children():
+            values = self.schedule_tree.item(item)['values']
+            # Определяем доминирующий тип смены за месяц
+            shifts_count = {}
+            for day in range(1, 32):
+                if day < len(values):
+                    shift = values[day]
+                    if shift:
+                        shifts_count[shift] = shifts_count.get(shift, 0) + 1
+            
+            # Находим самый частый тип смены
+            if shifts_count:
+                main_shift = max(shifts_count, key=shifts_count.get)
+                tag = f'shift_{main_shift}'
+                self.schedule_tree.item(item, tags=(tag,))
+            else:
+                self.schedule_tree.item(item, tags=('shift_',))
+    
+    def on_right_click(self, event):
+        """Обработка правого клика по ячейке"""
+        # Определяем строку и колонку
         item = self.schedule_tree.identify_row(event.y)
         column = self.schedule_tree.identify_column(event.x)
         
         if not item or not column:
             return
         
-        # Получаем номер дня (колонка)
+        # Получаем номер колонки
         col_num = int(column.replace('#', ''))
         if col_num == 1:  # первая колонка - имя
             return
         
-        # Показываем меню выбора смены
+        # Показываем меню
         self.show_shift_menu(item, column, col_num)
         
     def show_shift_menu(self, item, column, day):
@@ -396,7 +398,6 @@ class WorkTimeTracker:
         
         shifts = ['Я', 'В', 'ОТ', 'Б', 'НД', 'УВ', '']
         for shift in shifts:
-            color = self.shift_types.get(shift, 'white')
             menu.add_command(label=f"{shift if shift else 'Очистить'}", 
                            command=lambda s=shift: self.set_shift(item, column, day, s))
         
@@ -467,6 +468,7 @@ class WorkTimeTracker:
         
         self.conn.commit()
         messagebox.showinfo("Успех", f"Сохранено {saved_count} записей!")
+    
     def create_timesheet_tab(self):
         """Вкладка табеля"""
         ttk.Label(self.timesheet_frame, 
@@ -479,10 +481,11 @@ class WorkTimeTracker:
     def generate_timesheet(self):
         """Сгенерировать табель"""
         messagebox.showinfo("Инфо", "Табель будет сформирован здесь!")
+
 def main():
-        root = tk.Tk()
-        app = WorkTimeTracker(root)
-        root.mainloop()
+    root = tk.Tk()
+    app = WorkTimeTracker(root)
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
