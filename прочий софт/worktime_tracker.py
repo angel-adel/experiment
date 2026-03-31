@@ -224,7 +224,30 @@ class WorkTimeTracker:
                                   values=[str(y) for y in range(2024, 2030)], width=7)
         year_combo.pack(side='left', padx=5)
         
-        ttk.Button(control_frame, text="Загрузить", command=self.load_schedule).pack(side='left', padx=10)
+        ttk.Button(control_frame, text="📅 Загрузить график", 
+                  command=self.load_schedule).pack(side='left', padx=10)
+        
+        ttk.Button(control_frame, text="💾 Сохранить", 
+                  command=self.save_schedule).pack(side='left', padx=5)
+        
+        # Легенда
+        legend_frame = ttk.Frame(self.schedule_frame)
+        legend_frame.pack(fill='x', padx=10, pady=5)
+        
+        colors = [
+            ('#90EE90', 'Я - Явка'),
+            ('#FFD700', 'Б - Больничный'),
+            ('#FFA07A', 'ОТ - Отпуск'),
+            ('#87CEEB', 'НД - Неявка'),
+            ('white', 'В - Выходной')
+        ]
+        
+        for color, text in colors:
+            frame = ttk.Frame(legend_frame)
+            frame.pack(side='left', padx=10)
+            canvas = tk.Canvas(frame, width=20, height=20, bg=color)
+            canvas.pack(side='left')
+            ttk.Label(frame, text=text).pack(side='left', padx=5)
         
         # Сетка графика
         schedule_frame = ttk.Frame(self.schedule_frame)
@@ -237,7 +260,7 @@ class WorkTimeTracker:
         columns = ('emp',) + tuple(str(i) for i in range(1, 32))
         self.schedule_tree = ttk.Treeview(schedule_frame, columns=columns, 
                                           show='headings', yscrollcommand=v_scroll.set,
-                                          xscrollcommand=h_scroll.set)
+                                          xscrollcommand=h_scroll.set, height=20)
         
         h_scroll.config(command=self.schedule_tree.xview)
         v_scroll.config(command=self.schedule_tree.yview)
@@ -245,9 +268,9 @@ class WorkTimeTracker:
         self.schedule_tree.heading('emp', text='Сотрудник')
         for i in range(1, 32):
             self.schedule_tree.heading(str(i), text=str(i))
-            self.schedule_tree.column(str(i), width=40)
+            self.schedule_tree.column(str(i), width=45, anchor='center')
         
-        self.schedule_tree.column('emp', width=250)
+        self.schedule_tree.column('emp', width=300)
         
         self.schedule_tree.grid(row=0, column=0, sticky='nsew')
         v_scroll.grid(row=0, column=1, sticky='ns')
@@ -256,26 +279,194 @@ class WorkTimeTracker:
         schedule_frame.grid_rowconfigure(0, weight=1)
         schedule_frame.grid_columnconfigure(0, weight=1)
         
-        # Типы смен
-        self.shift_types = ['Я', 'В', 'ОТ', 'Б', 'НД', '']    
+        # Привязка события изменения ячейки
+        self.schedule_tree.bind('<Double-1>', self.on_cell_double_click)
+        
+        # Типы смен и их цвета
+        self.shift_types = {
+            '': 'white',
+            'Я': '#90EE90',      # светло-зеленый
+            'В': 'white',         # белый
+            'ОТ': '#FFA07A',      # светло-красный
+            'Б': '#FFD700',       # желтый
+            'НД': '#87CEEB',      # голубой
+            'УВ': '#FF6B6B'       # красный (уволен)
+        }
+        
+        self.current_month = datetime.now().month
+        self.current_year = datetime.now().year
+        
     def load_schedule(self):
-        """Загрузить график"""
-        messagebox.showinfo("Инфо", "Здесь будет загрузка графика!\nПока просто прототип.")
-        # Здесь будет логика загрузки
+        """Загрузить график сотрудников"""
+        try:
+            self.current_month = int(self.month_var.get())
+            self.current_year = int(self.year_var.get())
+        except:
+            messagebox.showerror("Ошибка", "Неверный формат месяца или года!")
+            return
         
-    def create_timesheet_tab(self):
-        """Вкладка табеля"""
-        ttk.Label(self.timesheet_frame, 
-                 text="Здесь будет автоматическая генерация табеля",
-                 font=('Arial', 12)).pack(pady=50)
+        # Очищаем таблицу
+        for item in self.schedule_tree.get_children():
+            self.schedule_tree.delete(item)
         
-        ttk.Button(self.timesheet_frame, text="Сформировать табель", 
-                  command=self.generate_timesheet).pack(pady=10)
+        # Получаем количество дней в месяце
+        days_in_month = calendar.monthrange(self.current_year, self.current_month)[1]
         
-    def generate_timesheet(self):
-        """Сгенерировать табель"""
-        messagebox.showinfo("Инфо", "Табель будет сформирован здесь!")
-
+        # Загружаем сотрудников
+        self.cursor.execute('SELECT id, name, position, tab_number FROM employees')
+        employees = self.cursor.fetchall()
+        
+        if not employees:
+            messagebox.showinfo("Инфо", "Сначала добавьте сотрудников!")
+            return
+        
+        # Создаем строки для каждого сотрудника
+        for emp in employees:
+            emp_id, name, position, tab_num = emp
+            emp_display = f"{name} (таб. {tab_num})"
+            
+            # Загружаем существующие смены
+            shifts = {}
+            self.cursor.execute('''
+                SELECT date, shift_type, hours FROM shifts 
+                WHERE employee_id = ? AND date LIKE ?
+            ''', (emp_id, f"{self.current_year}-{self.current_month:02d}%"))
+            
+            for shift in self.cursor.fetchall():
+                day = int(shift[0].split('-')[2])
+                shifts[day] = (shift[1], shift[2])
+            
+            # Создаем значения для строки
+            values = [emp_display]
+            for day in range(1, 32):
+                if day <= days_in_month and day in shifts:
+                    values.append(shifts[day][0])  # тип смены
+                else:
+                    values.append('')
+            
+            item_id = self.schedule_tree.insert('', 'end', values=values, tags=(str(emp_id),))
+            
+            # Применяем цвета
+            for day in range(1, 32):
+                if day <= days_in_month:
+                    shift_type = values[day] if day < len(values) else ''
+                    color = self.shift_types.get(shift_type, 'white')
+                    self.schedule_tree.item(item_id, tags=(str(emp_id),))
+        
+        # Применяем цвета после вставки
+        self.apply_colors()
+        
+        messagebox.showinfo("Успех", f"Загружено {len(employees)} сотрудников")
+        
+    def apply_colors(self):
+        """Применить цветовую заливку к ячейкам"""
+        for item in self.schedule_tree.get_children():
+            values = self.schedule_tree.item(item)['values']
+            for day in range(1, 32):
+                if day < len(values):
+                    shift_type = values[day]
+                    color = self.shift_types.get(shift_type, 'white')
+                    # Сохраняем цвет в тегах
+                    tags = self.schedule_tree.item(item)['tags']
+                    self.schedule_tree.item(item, tags=tags)
+    
+    def on_cell_double_click(self, event):
+        """Обработка двойного клика по ячейке"""
+        region = self.schedule_tree.identify("region", event.x, event.y)
+        if region != "cell":
+            return
+        
+        item = self.schedule_tree.identify_row(event.y)
+        column = self.schedule_tree.identify_column(event.x)
+        
+        if not item or not column:
+            return
+        
+        # Получаем номер дня (колонка)
+        col_num = int(column.replace('#', ''))
+        if col_num == 1:  # первая колонка - имя
+            return
+        
+        # Показываем меню выбора смены
+        self.show_shift_menu(item, column, col_num)
+        
+    def show_shift_menu(self, item, column, day):
+        """Показать меню выбора типа смены"""
+        menu = tk.Menu(self.root, tearoff=0)
+        
+        shifts = ['Я', 'В', 'ОТ', 'Б', 'НД', 'УВ', '']
+        for shift in shifts:
+            color = self.shift_types.get(shift, 'white')
+            menu.add_command(label=f"{shift if shift else 'Очистить'}", 
+                           command=lambda s=shift: self.set_shift(item, column, day, s))
+        
+        menu.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
+        
+    def set_shift(self, item, column, day, shift_type):
+        """Установить тип смены"""
+        # Обновляем значение в таблице
+        values = list(self.schedule_tree.item(item)['values'])
+        if day < len(values):
+            values[day] = shift_type
+            self.schedule_tree.item(item, values=values)
+        
+        # Применяем цвет
+        self.apply_colors()
+        
+    def save_schedule(self):
+        """Сохранить график в базу данных"""
+        saved_count = 0
+        
+        for item in self.schedule_tree.get_children():
+            values = self.schedule_tree.item(item)['values']
+            emp_display = values[0]
+            
+            # Извлекаем табельный номер
+            tab_num = emp_display.split('(таб. ')[1].replace(')', '') if '(таб. ' in emp_display else ''
+            
+            # Находим сотрудника в БД
+            self.cursor.execute('SELECT id FROM employees WHERE tab_number = ?', (tab_num,))
+            result = self.cursor.fetchone()
+            if not result:
+                continue
+            
+            emp_id = result[0]
+            
+            # Сохраняем смены
+            for day in range(1, 32):
+                if day < len(values):
+                    shift_type = values[day]
+                    if shift_type:  # если не пустая ячейка
+                        # Определяем часы (пока ставим 8 для явки, 0 для остальных)
+                        hours = 8 if shift_type == 'Я' else 0
+                        
+                        date = f"{self.current_year}-{self.current_month:02d}-{day:02d}"
+                        
+                        # Проверяем, есть ли уже запись
+                        self.cursor.execute('''
+                            SELECT id FROM shifts 
+                            WHERE employee_id = ? AND date = ?
+                        ''', (emp_id, date))
+                        
+                        existing = self.cursor.fetchone()
+                        
+                        if existing:
+                            # Обновляем
+                            self.cursor.execute('''
+                                UPDATE shifts SET shift_type = ?, hours = ?
+                                WHERE employee_id = ? AND date = ?
+                            ''', (shift_type, hours, emp_id, date))
+                        else:
+                            # Добавляем
+                            self.cursor.execute('''
+                                INSERT INTO shifts (employee_id, date, shift_type, hours)
+                                VALUES (?, ?, ?, ?)
+                            ''', (emp_id, date, shift_type, hours))
+                        
+                        saved_count += 1
+        
+        self.conn.commit()
+        messagebox.showinfo("Успех", f"Сохранено {saved_count} записей!")
 def main():
     root = tk.Tk()
     app = WorkTimeTracker(root)
