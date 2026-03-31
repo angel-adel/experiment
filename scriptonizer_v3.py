@@ -20,7 +20,6 @@ class GroupManagerWindow(tk.Toplevel):
         self.groups = groups if groups else []
         self.save_callback = save_callback
         
-        # Панель кнопок
         btn_frame = tk.Frame(self)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
         
@@ -28,10 +27,9 @@ class GroupManagerWindow(tk.Toplevel):
         tk.Button(btn_frame, text="❌", width=3, command=self.delete_group, bg="#f44336").pack(side=tk.LEFT, padx=2)
         tk.Button(btn_frame, text="⭐", width=3, command=self.toggle_favorite, bg="#FFD700").pack(side=tk.LEFT, padx=2)
         tk.Button(btn_frame, text="✏️", width=3, command=self.rename_group).pack(side=tk.LEFT, padx=2)
-        tk.Button(btn_frame, text="", width=3, command=lambda: self.move_group(-1)).pack(side=tk.LEFT, padx=2)
+        tk.Button(btn_frame, text="🔼", width=3, command=lambda: self.move_group(-1)).pack(side=tk.LEFT, padx=2)
         tk.Button(btn_frame, text="🔽", width=3, command=lambda: self.move_group(1)).pack(side=tk.LEFT, padx=2)
         
-        # Список групп
         list_frame = tk.Frame(self)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
@@ -43,8 +41,6 @@ class GroupManagerWindow(tk.Toplevel):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         self.refresh_list()
-        
-        # Кнопка внизу
         tk.Button(self, text="Изменить группу", command=self.save_and_close).pack(pady=10)
     
     def refresh_list(self):
@@ -106,14 +102,12 @@ class TimerManagerWindow(tk.Toplevel):
         self.save_callback = save_callback
         self.current_profile = None
         
-        # Верхняя панель
         top_frame = tk.Frame(self)
         top_frame.pack(fill=tk.X, padx=5, pady=5)
         
         tk.Button(top_frame, text="🔄", width=3, command=self.reset_timer, bg="#ff9800").pack(side=tk.LEFT, padx=2)
         tk.Button(top_frame, text="➕", width=3, command=self.add_profile, bg="#4CAF50").pack(side=tk.LEFT, padx=2)
         
-        # Вкладки профилей
         self.profiles_frame = tk.Frame(self)
         self.profiles_frame.pack(fill=tk.X, padx=5, pady=5)
         
@@ -121,7 +115,6 @@ class TimerManagerWindow(tk.Toplevel):
         self.profile_notebook.pack(fill=tk.X)
         self.profile_notebook.bind("<<NotebookTabChanged>>", self.on_profile_change)
         
-        # Поле имени профиля
         name_frame = tk.Frame(self)
         name_frame.pack(fill=tk.X, padx=5, pady=5)
         
@@ -130,7 +123,6 @@ class TimerManagerWindow(tk.Toplevel):
         self.profile_name.pack(fill=tk.X, expand=True, padx=5)
         tk.Button(name_frame, text="❌", command=self.delete_profile, bg="#f44336").pack(side=tk.RIGHT)
         
-        # Список событий
         events_frame = tk.Frame(self)
         events_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
@@ -143,7 +135,6 @@ class TimerManagerWindow(tk.Toplevel):
         self.events_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         events_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Добавление события
         add_event_frame = tk.Frame(self)
         add_event_frame.pack(fill=tk.X, padx=5, pady=5)
         
@@ -158,10 +149,8 @@ class TimerManagerWindow(tk.Toplevel):
         tk.Button(add_event_frame, text="❌", command=self.delete_event, bg="#f44336").pack(side=tk.RIGHT, padx=2)
         tk.Button(add_event_frame, text="Добавить уведомление", command=self.add_event).pack(side=tk.RIGHT, padx=5)
         
-        # Кнопка внизу
         tk.Button(self, text="Добавить событие", command=self.add_event_dialog, bg="#2196F3", fg="white").pack(pady=10)
         
-        # Кнопки сохранения
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
         tk.Button(btn_frame, text="💾 Сохранить", command=self.save_and_close, bg="#4CAF50", fg="white", width=15).pack(side=tk.LEFT, padx=10)
@@ -170,7 +159,6 @@ class TimerManagerWindow(tk.Toplevel):
         self.refresh_profiles()
     
     def refresh_profiles(self):
-        # Очищаем вкладки
         for widget in self.profile_notebook.winfo_children():
             widget.destroy()
         
@@ -202,10 +190,7 @@ class TimerManagerWindow(tk.Toplevel):
     def add_profile(self):
         name = simpledialog.askstring("Новый профиль", "Имя профиля:")
         if name:
-            self.timers.append({
-                "name": name,
-                "events": []
-            })
+            self.timers.append({"name": name, "events": []})
             self.refresh_profiles()
             self.profile_notebook.select(len(self.timers) - 1)
             self.current_profile = len(self.timers) - 1
@@ -269,7 +254,6 @@ class TimerManagerWindow(tk.Toplevel):
         messagebox.showinfo("Таймер", "Сброс таймера")
     
     def save_and_close(self):
-        # Сохраняем имена профилей
         for i, timer in enumerate(self.timers):
             timer['name'] = self.timers[i].get('name', f'Таймер {i+1}')
         
@@ -299,49 +283,33 @@ class ScriptonizerApp:
         self.start_timers()
     
     def setup_ui(self):
-        # Верхняя панель
         self.top_frame = tk.Frame(self.root, bg="#e0e0e0")
         self.top_frame.pack(fill=tk.X, padx=5, pady=5)
         
         self.buttons = {}
         
-        # 1. Настройки
         self.buttons['settings'] = tk.Button(self.top_frame, text="⚙️", width=4, height=2, command=self.open_settings)
-        
-        # 2. Hide
         self.buttons['hide'] = tk.Button(self.top_frame, text="👁️", width=4, height=2, command=self.toggle_hide)
-        
-        # 3. Drag&Drop
         self.buttons['drag'] = tk.Button(self.top_frame, text="↔️", width=4, height=2, command=self.toggle_drag)
-        
-        # 4. Фиксация
         self.buttons['fix'] = tk.Button(self.top_frame, text="🔒", width=4, height=2, command=self.toggle_fixed)
-        
-        # 5. Редактор
         self.buttons['editor'] = tk.Button(self.top_frame, text="📝", width=4, height=2, command=self.open_editor)
-        
-        # 6. Таймер (изначально скрыт)
         self.buttons['timer'] = tk.Button(self.top_frame, text="⏱️", width=4, height=2, command=self.open_timer_manager, bg="#ff9800")
-        
-        # 7. Поиск
         self.buttons['search'] = tk.Button(self.top_frame, text="🔍", width=4, height=2, command=self.focus_search)
+        
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(self.top_frame, textvariable=self.search_var, width=20)
         self.search_entry.bind('<KeyRelease>', self.filter_scripts)
         
-        # 8. Фильтр по цвету/группе
         self.filter_var = tk.StringVar(value="Все")
         self.filter_combo = ttk.Combobox(self.top_frame, textvariable=self.filter_var, values=["Все"], state="readonly", width=12)
         self.filter_combo.current(0)
         self.filter_combo.bind('<<ComboboxSelected>>', self.filter_scripts)
         
-        # 9. Добавить
         self.buttons['add'] = tk.Button(self.top_frame, text="➕", width=4, height=2, bg="#4CAF50", fg="white", command=self.add_script)
         
         self.update_buttons_visibility()
         self.update_filter_combo()
         
-        # Область скриптов
         self.scripts_frame = tk.Frame(self.root)
         self.scripts_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
@@ -378,7 +346,6 @@ class ScriptonizerApp:
         if self.config.get('show_editor', True):
             self.buttons['editor'].pack(side=tk.LEFT, padx=2)
         
-        # Таймер показываем только если есть таймеры
         if self.config.get('show_timer', False) and self.timers:
             self.buttons['timer'].pack(side=tk.LEFT, padx=2)
         
@@ -392,8 +359,8 @@ class ScriptonizerApp:
             self.buttons['add'].pack(side=tk.RIGHT, padx=2)
     
     def apply_config(self):
-        spacing = self.config.get('btn_spacing', 5)
-        # Применение настроек
+        if self.config.get('always_on_top', False):
+            self.root.attributes('-topmost', True)
     
     def refresh_scripts(self):
         for widget in self.scrollable_frame.winfo_children():
@@ -402,48 +369,53 @@ class ScriptonizerApp:
         spacing = self.config.get('btn_spacing', 5)
         rounding = self.config.get('rounding', 15)
         
-        # Фильтр
         filter_val = self.filter_var.get()
         scripts_to_show = self.scripts
         
         if filter_val != "Все":
-            # Ищем по группе или цвету
             scripts_to_show = [s for s in self.scripts if s.get('group') == filter_val or s.get('color') == filter_val]
         
         for i, script in enumerate(scripts_to_show):
             self.create_script_button(script, spacing, rounding, i)
     
     def create_script_button(self, script, spacing, rounding, index):
-    color = script.get('color', 'white')
-    name = script['name']
+        color = script.get('color', 'white')
+        name = script['name']
+        
+        # Динамическая ширина кнопки
+        btn_width = max(15, min(50, len(name) + 4))
+        
+        btn = tk.Button(self.scrollable_frame, text=name, bg=color,
+                       fg="white" if color in ["black", "blue", "purple", "red"] else "black",
+                       font=("Arial", 10, "bold"),
+                       width=btn_width,
+                       anchor=tk.CENTER,
+                       command=lambda t=script['text']: self.copy_and_paste(t))
+        btn.pack(pady=spacing, padx=5)
+        
+        if self.drag_mode:
+            btn.bind("<Button-1>", lambda e, idx=self.scripts.index(script): self.start_drag(idx))
+            btn.bind("<B1-Motion>", lambda e, idx=self.scripts.index(script): self.drag(idx))
     
-    # Динамическая ширина кнопки (минимум 15, максимум 50 символов)
-    btn_width = max(15, min(50, len(name) + 4))
-    
-    btn = tk.Button(self.scrollable_frame, text=name, bg=color,
-                   fg="white" if color in ["black", "blue", "purple", "red"] else "black",
-                   font=("Arial", 10, "bold"),
-                   width=btn_width,  # Динамическая ширина
-                   anchor=tk.CENTER,
-                   command=lambda t=script['text']: self.copy_and_paste(t))
-    btn.pack(pady=spacing, padx=5)
-    
-    if self.drag_mode:
-        btn.bind("<Button-1>", lambda e, idx=self.scripts.index(script): self.start_drag(idx))
-        btn.bind("<B1-Motion>", lambda e, idx=self.scripts.index(script): self.drag(idx))
+    def copy_and_paste(self, text):
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+        self.root.update()
+        time.sleep(0.1)
         
         if self.config.get('copy_to_buffer', True):
-            pyautogui.hotkey('ctrl', 'v')
+            try:
+                pyautogui.hotkey('ctrl', 'v', interval=0.1)
+            except Exception as e:
+                print(f"Ошибка вставки: {e}")
     
     def filter_scripts(self, event=None):
         self.refresh_scripts()
     
     def update_filter_combo(self):
         values = ["Все"]
-        # Добавляем цвета
         colors = set(s.get('color', 'white') for s in self.scripts)
         values.extend(colors)
-        # Добавляем группы
         if self.config.get('use_groups', False):
             groups = [g['name'] for g in self.groups]
             values.extend(groups)
@@ -452,7 +424,6 @@ class ScriptonizerApp:
         if "Все" in values:
             self.filter_combo.current(0)
     
-    # --- ФУНКЦИИ КНОПОК ---
     def open_settings(self):
         SettingsWindow(self.root, self.config, self.save_config)
     
@@ -465,49 +436,104 @@ class ScriptonizerApp:
     
     def toggle_drag(self):
         self.drag_mode = not self.drag_mode
-        messagebox.showinfo("Drag&Drop", f"Режим перетаскивания: {'ВКЛ' if self.drag_mode else 'ВЫКЛ'}\nЗажмите кнопку и перетащите")
+        messagebox.showinfo("Drag&Drop", f"Режим перетаскивания: {'ВКЛ' if self.drag_mode else 'ВЫКЛ'}")
         self.refresh_scripts()
     
     def toggle_fixed(self):
         self.fixed_size = not self.fixed_size
         if self.fixed_size:
             self.root.resizable(False, False)
+            self.root.update_idletasks()
+            width = self.root.winfo_width()
+            height = self.root.winfo_height()
+            self.root.geometry(f"{width}x{height}")
         else:
             self.root.resizable(True, True)
     
     def open_editor(self):
         editor = tk.Toplevel(self.root)
         editor.title("Редактор скриптов")
-        editor.geometry("600x450")
+        editor.geometry("650x500")
         
-        # 4 кнопки сверху
         btn_frame1 = tk.Frame(editor)
         btn_frame1.pack(fill=tk.X, padx=10, pady=5)
         
         tk.Button(btn_frame1, text="Вставить скрипты", command=self.import_scripts).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame1, text="Скопировать скрипты в буфер", command=self.copy_all_scripts).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame1, text="Скопировать в буфер", command=self.copy_all_scripts).pack(side=tk.LEFT, padx=5)
         tk.Button(btn_frame1, text="Добавить скрипт", command=self.add_script).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame1, text="Отправить на раб.стол", command=self.export_to_desktop).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame1, text="На раб.стол", command=self.export_to_desktop).pack(side=tk.LEFT, padx=5)
         
-        # Список
         list_frame = tk.Frame(editor)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         scrollbar = ttk.Scrollbar(list_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.editor_listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set)
-        self.editor_listbox.pack(fill=tk.BOTH, expand=True)
+        self.editor_listbox = tk.Listbox(list_frame, font=("Arial", 10))
+        self.editor_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         for s in self.scripts:
             self.editor_listbox.insert(tk.END, s['name'])
         
-        # 2 кнопки снизу
+        control_frame = tk.Frame(editor)
+        control_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        def delete_selected():
+            sel = self.editor_listbox.curselection()
+            if sel:
+                if messagebox.askyesno("Удалить", f"Удалить скрипт '{self.scripts[sel[0]]['name']}'?"):
+                    self.scripts.pop(sel[0])
+                    self.save_scripts()
+                    self.editor_listbox.delete(sel[0])
+                    self.refresh_scripts()
+                    self.update_filter_combo()
+        
+        def edit_selected():
+            sel = self.editor_listbox.curselection()
+            if sel:
+                self.edit_script(sel[0])
+        
+        tk.Button(control_frame, text="🗑️ Удалить", command=delete_selected, bg="#f44336", fg="white").pack(side=tk.LEFT, padx=5)
+        tk.Button(control_frame, text="✏️ Редактировать", command=edit_selected).pack(side=tk.LEFT, padx=5)
+        
         btn_frame2 = tk.Frame(editor)
         btn_frame2.pack(fill=tk.X, padx=10, pady=5)
         
         tk.Button(btn_frame2, text="Управление таймером", command=self.open_timer_manager).pack(side=tk.LEFT, padx=5)
         tk.Button(btn_frame2, text="Управление группами", command=self.open_group_manager).pack(side=tk.RIGHT, padx=5)
+    
+    def edit_script(self, index):
+        script = self.scripts[index]
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Редактировать: {script['name']}")
+        dialog.geometry("600x450")
+        
+        tk.Label(dialog, text="Имя:").pack(anchor=tk.W, padx=10, pady=(10,0))
+        name_entry = tk.Entry(dialog)
+        name_entry.insert(0, script['name'])
+        name_entry.pack(fill=tk.X, padx=10)
+        
+        tk.Label(dialog, text="Текст:").pack(anchor=tk.W, padx=10, pady=(10,0))
+        text_area = tk.Text(dialog, height=15)
+        text_area.insert('1.0', script['text'])
+        text_area.pack(fill=tk.BOTH, expand=True, padx=10)
+        
+        tk.Label(dialog, text="Цвет:").pack(anchor=tk.W, padx=10, pady=(10,0))
+        color_var = tk.StringVar(value=script.get('color', 'white'))
+        colors = ["white", "red", "green", "blue", "yellow", "orange", "purple", "black"]
+        color_combo = ttk.Combobox(dialog, textvariable=color_var, values=colors, state="readonly")
+        color_combo.pack(anchor=tk.W, padx=10)
+        
+        def save():
+            self.scripts[index]['name'] = name_entry.get()
+            self.scripts[index]['text'] = text_area.get('1.0', tk.END).strip()
+            self.scripts[index]['color'] = color_var.get()
+            self.save_scripts()
+            self.refresh_scripts()
+            self.update_filter_combo()
+            dialog.destroy()
+        
+        tk.Button(dialog, text="Сохранить", command=save, bg="#4CAF50", fg="white").pack(pady=10)
     
     def open_timer_manager(self):
         TimerManagerWindow(self.root, self.timers, self.save_timers)
@@ -538,7 +564,6 @@ class ScriptonizerApp:
         color_combo.pack(anchor=tk.W, padx=10)
         color_combo.current(0)
         
-        # Группа
         if self.config.get('use_groups', False) and self.groups:
             tk.Label(dialog, text="Группа:").pack(anchor=tk.W, padx=10, pady=(10,0))
             group_var = tk.StringVar(value="")
@@ -593,7 +618,6 @@ class ScriptonizerApp:
                 else:
                     with open(filepath, 'r', encoding='utf-8') as f:
                         content = f.read()
-                    # Парсинг TXT
                     blocks = content.split('===')
                     for block in blocks:
                         if not block.strip():
@@ -625,7 +649,6 @@ class ScriptonizerApp:
                 f.write(f"=== {s['name']} | {color}{extra} ===\n{s['text']}\n\n")
         messagebox.showinfo("Успех", f"Сохранено: {path}")
     
-    # --- DRAG & DROP ---
     def start_drag(self, idx):
         self.drag_start_idx = idx
     
@@ -636,7 +659,6 @@ class ScriptonizerApp:
             self.refresh_scripts()
             self.save_scripts()
     
-    # --- ТАЙМЕРЫ ---
     def start_timers(self):
         self.check_timers()
         self.root.after(1000, self.start_timers)
@@ -651,18 +673,18 @@ class ScriptonizerApp:
                     notify_before = timedelta(minutes=event.get('notify', 15))
                     notify_time = event_dt - notify_before
                     
-                    if abs((now - notify_time).total_seconds()) < 1:  # В пределах секунды
+                    if abs((now - notify_time).total_seconds()) < 1:
                         if self.config.get('timer_sound', True):
                             winsound.MessageBeep()
                         messagebox.showinfo(f"⏰ {timer['name']}", f"Событие: {event['time']}\nУведомление!")
                 except:
                     pass
     
-    # --- СОХРАНЕНИЕ ---
     def save_config(self, config):
         self.config = config
         with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(config, f, ensure_ascii=False, indent=2)
+        self.apply_config()
         self.update_buttons_visibility()
         self.refresh_scripts()
     
@@ -707,7 +729,7 @@ class ScriptonizerApp:
         self.timers = timers
         with open('timers.json', 'w', encoding='utf-8') as f:
             json.dump(timers, f, ensure_ascii=False, indent=2)
-        self.update_buttons_visibility()  # Показываем кнопку таймера если есть таймеры
+        self.update_buttons_visibility()
     
     def load_timers(self):
         if os.path.exists('timers.json'):
@@ -730,17 +752,14 @@ class SettingsWindow(tk.Toplevel):
         notebook = ttk.Notebook(self)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Вкладка 1: Основные
         tab_main = tk.Frame(notebook)
         notebook.add(tab_main, text="Основные")
         self.setup_main_tab(tab_main)
         
-        # Вкладка 2: Дополнительные
         tab_extra = tk.Frame(notebook)
         notebook.add(tab_extra, text="Дополнительные")
         self.setup_extra_tab(tab_extra)
         
-        # Вкладка 3: О приложении
         tab_about = tk.Frame(notebook)
         notebook.add(tab_about, text="О приложении")
         self.setup_about_tab(tab_about)
