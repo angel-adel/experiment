@@ -1,38 +1,45 @@
 import random
 import string
+import tkinter as tk
+from tkinter import messagebox, simpledialog
 
 def generate_password(length):
-    # Берем все возможные символы: буквы, цифры, знаки препинания
     chars = string.ascii_letters + string.digits + string.punctuation
-    
-    # Генерируем пароль случайным выбором
     password = ''.join(random.choice(chars) for _ in range(length))
     return password
 
 def main():
-    print("Привет, Дима! Давай создадим надежный пароль.")
+    root = tk.Tk()
+    root.withdraw()  # Скрываем главное окно
+    root.title("Генератор паролей")
     
     while True:
+        user_input = simpledialog.askstring(
+            "Генератор паролей", 
+            "Введи длину пароля (минимум 6):\n(Отмена для выхода)"
+        )
+        
+        if user_input is None:  # Нажали Отмена
+            break
+        
         try:
-            user_input = input("\nВведи желаемую длину пароля (или 'q' для выхода): ")
-            
-            if user_input.lower() == 'q':
-                print("Бывай, творец! До связи.")
-                break
-            
             length = int(user_input)
-            
             if length < 6:
-                print("Слишком коротко, давай хотя бы 6 символов для надежности.")
+                messagebox.showwarning("Внимание", "Слишком коротко! Минимум 6 символов.")
                 continue
             
             password = generate_password(length)
-            print(f"🔐 Твой пароль: {password}")
+            messagebox.showinfo("Твой пароль", password)
             
-            # Можно сразу скопировать, если нужно, но пока просто выводим
+            # Копируем в буфер обмена
+            root.clipboard_clear()
+            root.clipboard_append(password)
+            messagebox.showinfo("Удобно", "Пароль скопирован в буфер обмена!")
             
         except ValueError:
-            print("Эй, нужно ввести число! Попробуй еще раз.")
+            messagebox.showerror("Ошибка", "Нужно ввести число!")
+    
+    root.destroy()
 
 if __name__ == "__main__":
     main()
