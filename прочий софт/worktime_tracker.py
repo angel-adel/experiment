@@ -239,7 +239,8 @@ class WorkTimeTracker:
             ('#FFD700', 'Б - Больничный'),
             ('#FFA07A', 'ОТ - Отпуск'),
             ('#87CEEB', 'НД - Неявка'),
-            ('white', 'В - Выходной')
+            ('white', 'В - Выходной'),
+            ('#FF6B6B', 'УВ - Уволен')
         ]
         
         for color, text in colors:
@@ -279,96 +280,42 @@ class WorkTimeTracker:
         schedule_frame.grid_rowconfigure(0, weight=1)
         schedule_frame.grid_columnconfigure(0, weight=1)
         
+        # Настраиваем теги для цветов
+        self.schedule_tree.tag_configure('shift_Я', background='#90EE90')
+        self.schedule_tree.tag_configure('shift_В', background='white')
+        self.schedule_tree.tag_configure('shift_ОТ', background='#FFA07A')
+        self.schedule_tree.tag_configure('shift_Б', background='#FFD700')
+        self.schedule_tree.tag_configure('shift_НД', background='#87CEEB')
+        self.schedule_tree.tag_configure('shift_УВ', background='#FF6B6B')
+        self.schedule_tree.tag_configure('shift_', background='white')
+        
         # Привязка события изменения ячейки
         self.schedule_tree.bind('<Double-1>', self.on_cell_double_click)
         
-        # Типы смен и их цвета
-        self.shift_types = {
-            '': 'white',
-            'Я': '#90EE90',      # светло-зеленый
-            'В': 'white',         # белый
-            'ОТ': '#FFA07A',      # светло-красный
-            'Б': '#FFD700',       # желтый
-            'НД': '#87CEEB',      # голубой
-            'УВ': '#FF6B6B'       # красный (уволен)
-        }
+        # Типы смен
+        self.shift_types = ['Я', 'В', 'ОТ', 'Б', 'НД', 'УВ', '']
         
         self.current_month = datetime.now().month
         self.current_year = datetime.now().year
         
-    def load_schedule(self):
-        """Загрузить график сотрудников"""
-        try:
-            self.current_month = int(self.month_var.get())
-            self.current_year = int(self.year_var.get())
-        except:
-            messagebox.showerror("Ошибка", "Неверный формат месяца или года!")
-            return
-        
-        # Очищаем таблицу
-        for item in self.schedule_tree.get_children():
-            self.schedule_tree.delete(item)
-        
-        # Получаем количество дней в месяце
-        days_in_month = calendar.monthrange(self.current_year, self.current_month)[1]
-        
-        # Загружаем сотрудников
-        self.cursor.execute('SELECT id, name, position, tab_number FROM employees')
-        employees = self.cursor.fetchall()
-        
-        if not employees:
-            messagebox.showinfo("Инфо", "Сначала добавьте сотрудников!")
-            return
-        
-        # Создаем строки для каждого сотрудника
-        for emp in employees:
-            emp_id, name, position, tab_num = emp
-            emp_display = f"{name} (таб. {tab_num})"
-            
-            # Загружаем существующие смены
-            shifts = {}
-            self.cursor.execute('''
-                SELECT date, shift_type, hours FROM shifts 
-                WHERE employee_id = ? AND date LIKE ?
-            ''', (emp_id, f"{self.current_year}-{self.current_month:02d}%"))
-            
-            for shift in self.cursor.fetchall():
-                day = int(shift[0].split('-')[2])
-                shifts[day] = (shift[1], shift[2])
-            
-            # Создаем значения для строки
-            values = [emp_display]
-            for day in range(1, 32):
-                if day <= days_in_month and day in shifts:
-                    values.append(shifts[day][0])  # тип смены
-                else:
-                    values.append('')
-            
-            item_id = self.schedule_tree.insert('', 'end', values=values, tags=(str(emp_id),))
-            
-            # Применяем цвета
-            for day in range(1, 32):
-                if day <= days_in_month:
-                    shift_type = values[day] if day < len(values) else ''
-                    color = self.shift_types.get(shift_type, 'white')
-                    self.schedule_tree.item(item_id, tags=(str(emp_id),))
-        
-        # Применяем цвета после вставки
-        self.apply_colors()
-        
-        messagebox.showinfo("Успех", f"Загружено {len(employees)} сотрудников")
-        
-    def apply_colors(self):
-        """Применить цветовую заливку к ячейкам"""
+     def apply_colors(self):
+        """Применить цветовую заливку к строкам"""
         for item in self.schedule_tree.get_children():
             values = self.schedule_tree.item(item)['values']
+            # Определяем доминирующий тип смены за месяц
+            shifts_count = {}
             for day in range(1, 32):
                 if day < len(values):
-                    shift_type = values[day]
-                    color = self.shift_types.get(shift_type, 'white')
-                    # Сохраняем цвет в тегах
-                    tags = self.schedule_tree.item(item)['tags']
-                    self.schedule_tree.item(item, tags=tags)
+                    shift = values[day]
+                    shifts_count[shift] = shifts_count.get(shift, 0) + 1
+            
+            # Находим самый частый тип смены
+            if shifts_count:
+                main_shift = max(shifts_count, key=shifts_count.get)
+                tag = f'shift_{main_shift}'
+                self.schedule_tree.item(item, tags=(tag,))
+            else:
+                self.schedule_tree.item(item, tags=('shift_',))
     
     def on_cell_double_click(self, event):
         """Обработка двойного клика по ячейке"""
@@ -410,7 +357,7 @@ class WorkTimeTracker:
             values[day] = shift_type
             self.schedule_tree.item(item, values=values)
         
-        # Применяем цвет
+        # Перекрашиваем строку
         self.apply_colors()
         
     def save_schedule(self):
