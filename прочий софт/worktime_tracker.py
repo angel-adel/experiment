@@ -206,7 +206,58 @@ class WorkTimeTracker:
         self.cursor.execute('SELECT * FROM employees')
         for row in self.cursor.fetchall():
             self.emp_tree.insert('', 'end', values=row)
+        def create_schedule_tab(self):
+        """Вкладка графика"""
+        # Выбор месяца
+        control_frame = ttk.Frame(self.schedule_frame)
+        control_frame.pack(fill='x', padx=10, pady=10)
         
+        ttk.Label(control_frame, text="Месяц:").pack(side='left', padx=5)
+        self.month_var = tk.StringVar(value=str(datetime.now().month))
+        month_combo = ttk.Combobox(control_frame, textvariable=self.month_var, 
+                                   values=[str(i) for i in range(1, 13)], width=5)
+        month_combo.pack(side='left', padx=5)
+        
+        ttk.Label(control_frame, text="Год:").pack(side='left', padx=5)
+        self.year_var = tk.StringVar(value=str(datetime.now().year))
+        year_combo = ttk.Combobox(control_frame, textvariable=self.year_var,
+                                  values=[str(y) for y in range(2024, 2030)], width=7)
+        year_combo.pack(side='left', padx=5)
+        
+        ttk.Button(control_frame, text="Загрузить", command=self.load_schedule).pack(side='left', padx=10)
+        
+        # Сетка графика
+        schedule_frame = ttk.Frame(self.schedule_frame)
+        schedule_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Создаем скроллбары
+        h_scroll = ttk.Scrollbar(schedule_frame, orient='horizontal')
+        v_scroll = ttk.Scrollbar(schedule_frame, orient='vertical')
+        
+        columns = ('emp',) + tuple(str(i) for i in range(1, 32))
+        self.schedule_tree = ttk.Treeview(schedule_frame, columns=columns, 
+                                          show='headings', yscrollcommand=v_scroll.set,
+                                          xscrollcommand=h_scroll.set)
+        
+        h_scroll.config(command=self.schedule_tree.xview)
+        v_scroll.config(command=self.schedule_tree.yview)
+        
+        self.schedule_tree.heading('emp', text='Сотрудник')
+        for i in range(1, 32):
+            self.schedule_tree.heading(str(i), text=str(i))
+            self.schedule_tree.column(str(i), width=40)
+        
+        self.schedule_tree.column('emp', width=250)
+        
+        self.schedule_tree.grid(row=0, column=0, sticky='nsew')
+        v_scroll.grid(row=0, column=1, sticky='ns')
+        h_scroll.grid(row=1, column=0, sticky='ew')
+        
+        schedule_frame.grid_rowconfigure(0, weight=1)
+        schedule_frame.grid_columnconfigure(0, weight=1)
+        
+        # Типы смен
+        self.shift_types = ['Я', 'В', 'ОТ', 'Б', 'НД', '']    
     def load_schedule(self):
         """Загрузить график"""
         messagebox.showinfo("Инфо", "Здесь будет загрузка графика!\nПока просто прототип.")
