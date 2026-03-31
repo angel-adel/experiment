@@ -414,24 +414,23 @@ class ScriptonizerApp:
             self.create_script_button(script, spacing, rounding, i)
     
     def create_script_button(self, script, spacing, rounding, index):
-        color = script.get('color', 'white')
-        name = script['name']
-        
-        btn = tk.Button(self.scrollable_frame, text=name, bg=color,
-                       fg="white" if color in ["black", "blue", "purple", "red"] else "black",
-                       font=("Arial", 10, "bold"),
-                       command=lambda t=script['text']: self.copy_and_paste(t))
-        btn.pack(fill=tk.X, pady=spacing, padx=5)
-        
-        if self.drag_mode:
-            btn.bind("<Button-1>", lambda e, idx=self.scripts.index(script): self.start_drag(idx))
-            btn.bind("<B1-Motion>", lambda e, idx=self.scripts.index(script): self.drag(idx))
+    color = script.get('color', 'white')
+    name = script['name']
     
-    def copy_and_paste(self, text):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(text)
-        self.root.update()
-        time.sleep(0.1)
+    # Динамическая ширина кнопки (минимум 15, максимум 50 символов)
+    btn_width = max(15, min(50, len(name) + 4))
+    
+    btn = tk.Button(self.scrollable_frame, text=name, bg=color,
+                   fg="white" if color in ["black", "blue", "purple", "red"] else "black",
+                   font=("Arial", 10, "bold"),
+                   width=btn_width,  # Динамическая ширина
+                   anchor=tk.CENTER,
+                   command=lambda t=script['text']: self.copy_and_paste(t))
+    btn.pack(pady=spacing, padx=5)
+    
+    if self.drag_mode:
+        btn.bind("<Button-1>", lambda e, idx=self.scripts.index(script): self.start_drag(idx))
+        btn.bind("<B1-Motion>", lambda e, idx=self.scripts.index(script): self.drag(idx))
         
         if self.config.get('copy_to_buffer', True):
             pyautogui.hotkey('ctrl', 'v')
