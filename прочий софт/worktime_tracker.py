@@ -67,7 +67,7 @@ class WorkTimeTracker:
         notebook.add(self.timesheet_frame, text='📋 Табель')
         self.create_timesheet_tab()
         
-      def create_employees_tab(self):
+    def create_employees_tab(self):
         """Вкладка сотрудников"""
         # Панель управления
         control_frame = ttk.Frame(self.employees_frame)
