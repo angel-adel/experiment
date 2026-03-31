@@ -468,20 +468,171 @@ class WorkTimeTracker:
         
         self.conn.commit()
         messagebox.showinfo("Успех", f"Сохранено {saved_count} записей!")
-    
     def create_timesheet_tab(self):
         """Вкладка табеля"""
-        ttk.Label(self.timesheet_frame, 
-                 text="Здесь будет автоматическая генерация табеля",
-                 font=('Arial', 12)).pack(pady=50)
+        # Выбор периода
+        control_frame = ttk.Frame(self.timesheet_frame)
+        control_frame.pack(fill='x', padx=10, pady=10)
         
-        ttk.Button(self.timesheet_frame, text="Сформировать табель", 
-                  command=self.generate_timesheet).pack(pady=10)
+        ttk.Label(control_frame, text="Месяц:").pack(side='left', padx=5)
+        self.ts_month_var = tk.StringVar(value=str(datetime.now().month))
+        month_combo = ttk.Combobox(control_frame, textvariable=self.ts_month_var, 
+                                   values=[str(i) for i in range(1, 13)], width=5)
+        month_combo.pack(side='left', padx=5)
         
+        ttk.Label(control_frame, text="Год:").pack(side='left', padx=5)
+        self.ts_year_var = tk.StringVar(value=str(datetime.now().year))
+        year_combo = ttk.Combobox(control_frame, textvariable=self.ts_year_var,
+                                  values=[str(y) for y in range(2024, 2030)], width=7)
+        year_combo.pack(side='left', padx=5)
+        
+        ttk.Button(control_frame, text="📋 Сформировать табель", 
+                  command=self.generate_timesheet).pack(side='left', padx=10)
+        
+        ttk.Button(control_frame, text="💾 Экспорт в Excel", 
+                  command=self.export_to_excel).pack(side='left', padx=5)
+        
+        # Область предпросмотра
+        preview_frame = ttk.LabelFrame(self.timesheet_frame, text="Предпросмотр")
+        preview_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Создаем текстовое поле для предпросмотра
+        self.timesheet_text = tk.Text(preview_frame, font=('Courier New', 10))
+        self.timesheet_text.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Скроллбар
+        scrollbar = ttk.Scrollbar(self.timesheet_text, command=self.timesheet_text.yview)
+        scrollbar.pack(side='right', fill='y')
+        self.timesheet_text.config(yscrollcommand=scrollbar.set)
+    
     def generate_timesheet(self):
         """Сгенерировать табель"""
-        messagebox.showinfo("Инфо", "Табель будет сформирован здесь!")
-
+        try:
+            month = int(self.ts_month_var.get())
+            year = int(self.ts_year_var.get())
+        except:
+            messagebox.showerror("Ошибка", "Неверный формат месяца или года!")
+            return
+        
+        # Очищаем предпросмотр
+        self.timesheet_text.delete('1.0', 'end')
+        
+        # Заголовок
+        header = f"ТАБЕЛЬ учета рабочего времени\n"
+        header += f"Месяц: {month:02d}/{year}\n"
+        header += "=" * 100 + "\n\n"
+        
+        self.timesheet_text.insert('1.0', header)
+        
+        # Получаем сотрудников
+        self.cursor.execute('SELECT id, name, tab_number, position FROM employees')
+        employees = self.cursor.fetchall()
+        
+        if not employees:
+            messagebox.showinfo("Инфо", "Нет сотрудников в базе!")
+            return
+        
+        # Формируем строки табеля
+        line_num = 1
+        total_days = 0
+        total_hours = 0
+        
+        for emp in employees:
+            emp_id, name, tab_num, position = emp
+            
+            # Получаем смены за месяц
+            self.cursor.execute('''
+                SELECT shift_type, hours FROM shifts 
+                WHERE employee_id = ? AND date LIKE ?
+            ''', (emp_id, f"{year}-{month:02d}%"))
+            
+            shifts = self.cursor.fetchall()
+            
+            # Считаем итоги
+            days_worked = sum(1 for s in shifts if s[0] == 'Я')
+            hours_worked = sum(s[1] for s in shifts if s[0] == 'Я')
+            sick_days = sum(1 for s in shifts if s[0] == 'Б')
+            vacation_days = sum(1 for s in shifts if s[0] == 'ОТ')
+            
+            # Формируем строку
+            line = f"{line_num:3}. {name:<30} Таб.№:{tab_num:<6} "
+            line += f"Я:{days_worked:2}д/{hours_worked:3}ч "
+            line += f"Б:{sick_days:2}д ОТ:{vacation_days:2}д\n"
+            
+            self.timesheet_text.insert('end', line)
+            
+            total_days += days_worked
+            total_hours += hours_worked
+            line_num += 1
+        
+        # Итого
+        footer = "\n" + "=" * 100 + "\n"
+        footer += f"ИТОГО: {line_num-1} сотрудников, {total_days} явочных дней, {total_hours} часов\n"
+        footer += "=" * 100 + "\n\n"
+        footer += "Руководитель: ___________________    Дата: ___________\n\n"
+        footer += "Ответственное лицо: _______________    Дата: ___________\n"
+        
+        self.timesheet_text.insert('end', footer)
+        
+        messagebox.showinfo("Успех", "Табель сформирован!")
+    
+    def export_to_excel(self):
+        """Экспорт табеля в Excel"""
+        try:
+            from openpyxl import Workbook
+        except ImportError:
+            messagebox.showerror("Ошибка", "Установите openpyxl: pip install openpyxl")
+            return
+        
+        try:
+            month = int(self.ts_month_var.get())
+            year = int(self.ts_year_var.get())
+        except:
+            messagebox.showerror("Ошибка", "Неверный формат месяца или года!")
+            return
+        
+        # Создаем книгу Excel
+        wb = Workbook()
+        ws = wb.active
+        ws.title = f"Табель {month:02d}-{year}"
+        
+        # Заголовки
+        headers = ['№', 'ФИО', 'Таб.№', 'Должность', 'Явка (дней)', 
+                  'Явка (часов)', 'Больничный', 'Отпуск', 'Примечание']
+        ws.append(headers)
+        
+        # Получаем сотрудников
+        self.cursor.execute('SELECT id, name, tab_number, position FROM employees')
+        employees = self.cursor.fetchall()
+        
+        line_num = 1
+        for emp in employees:
+            emp_id, name, tab_num, position = emp
+            
+            # Получаем смены за месяц
+            self.cursor.execute('''
+                SELECT shift_type, hours FROM shifts 
+                WHERE employee_id = ? AND date LIKE ?
+            ''', (emp_id, f"{year}-{month:02d}%"))
+            
+            shifts = self.cursor.fetchall()
+            
+            # Считаем итоги
+            days_worked = sum(1 for s in shifts if s[0] == 'Я')
+            hours_worked = sum(s[1] for s in shifts if s[0] == 'Я')
+            sick_days = sum(1 for s in shifts if s[0] == 'Б')
+            vacation_days = sum(1 for s in shifts if s[0] == 'ОТ')
+            
+            ws.append([line_num, name, tab_num, position, days_worked, 
+                      hours_worked, sick_days, vacation_days, ''])
+            
+            line_num += 1
+        
+        # Сохраняем файл
+        filename = f"Табель_{year}_{month:02d}.xlsx"
+        wb.save(filename)
+        
+        messagebox.showinfo("Успех", f"Табель экспортирован в файл:\n{filename}")
 def main():
     root = tk.Tk()
     app = WorkTimeTracker(root)
