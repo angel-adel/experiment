@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, filedialog, simpledialog
+from tkinter import ttk, messagebox, filedialog, simpledialog
 import json
 import os
 import pyautogui
@@ -149,7 +149,16 @@ class ScriptonizerLite:
         
         editor = tk.Toplevel(self.root)
         editor.title("Редактор скриптов")
-        editor.geometry("500x400")
+        editor.geometry("650x500")
+        
+        # 4 кнопки СВЕРХУ (как на скрине)
+        top_btn_frame = tk.Frame(editor)
+        top_btn_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        tk.Button(top_btn_frame, text="Вставить скрипты", command=self.import_scripts).pack(side=tk.LEFT, padx=5)
+        tk.Button(top_btn_frame, text="Скопировать в буфер", command=self.copy_all_scripts).pack(side=tk.LEFT, padx=5)
+        tk.Button(top_btn_frame, text="Добавить скрипт", command=self.add_script).pack(side=tk.LEFT, padx=5)
+        tk.Button(top_btn_frame, text="На раб.стол", command=self.export_to_desktop).pack(side=tk.LEFT, padx=5)
         
         # Список скриптов
         list_frame = tk.Frame(editor)
@@ -165,9 +174,9 @@ class ScriptonizerLite:
         for s in self.scripts:
             self.editor_listbox.insert(tk.END, s['name'])
         
-        # Кнопки управления
-        btn_frame = tk.Frame(editor)
-        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+        # 2 кнопки СНИЗУ (перед управлением таймером/группами)
+        mid_btn_frame = tk.Frame(editor)
+        mid_btn_frame.pack(fill=tk.X, padx=10, pady=5)
         
         def delete_selected():
             sel = self.editor_listbox.curselection()
@@ -183,12 +192,19 @@ class ScriptonizerLite:
             if sel:
                 self.edit_script(sel[0])
         
-        tk.Button(btn_frame, text="🗑️ Удалить", command=delete_selected, 
-                 bg="#f44336", fg="white").pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="✏️ Редактировать", command=edit_selected).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="📋 Копировать все", command=self.copy_all_scripts).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="💾 На раб.стол", command=self.export_to_desktop).pack(side=tk.RIGHT, padx=5)
-        tk.Button(btn_frame, text="❌ Закрыть", command=editor.destroy).pack(side=tk.RIGHT, padx=5)
+        tk.Button(mid_btn_frame, text="🗑️ Удалить", command=delete_selected, 
+                 bg="#f44336", fg="white", width=12).pack(side=tk.LEFT, padx=5)
+        tk.Button(mid_btn_frame, text="✏️ Редактировать", command=edit_selected, width=15).pack(side=tk.LEFT, padx=5)
+        
+        # Управление таймером и группами (в самом низу)
+        bottom_btn_frame = tk.Frame(editor)
+        bottom_btn_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        tk.Button(bottom_btn_frame, text="Управление таймером", command=self.open_timer_manager).pack(side=tk.LEFT, padx=5)
+        tk.Button(bottom_btn_frame, text="Управление группами", command=self.open_group_manager).pack(side=tk.RIGHT, padx=5)
+        
+        # Кнопка закрытия
+        tk.Button(editor, text="❌ Закрыть", command=editor.destroy).pack(pady=5)
     
     def edit_script(self, index):
         script = self.scripts[index]
@@ -226,22 +242,29 @@ class ScriptonizerLite:
     def add_script(self):
         dialog = tk.Toplevel(self.root)
         dialog.title("Добавить скрипт")
-        dialog.geometry("500x400")
+        dialog.geometry("500x450")
         
+        # Имя скрипта
         tk.Label(dialog, text="Имя скрипта:").pack(anchor=tk.W, padx=10, pady=(10,0))
         name_entry = tk.Entry(dialog)
         name_entry.pack(fill=tk.X, padx=10)
         
-        tk.Label(dialog, text="Текст скрипта:").pack(anchor=tk.W, padx=10, pady=(10,0))
-        text_area = tk.Text(dialog, height=10)
+        # Тело скрипта
+        tk.Label(dialog, text="Тело скрипта:").pack(anchor=tk.W, padx=10, pady=(10,0))
+        text_area = tk.Text(dialog, height=15)
         text_area.pack(fill=tk.BOTH, expand=True, padx=10)
         
+        # Цвет
         tk.Label(dialog, text="Цвет:").pack(anchor=tk.W, padx=10, pady=(10,0))
         color_var = tk.StringVar(value="white")
         colors = ["white", "red", "green", "blue", "yellow", "orange", "purple", "black"]
         color_combo = ttk.Combobox(dialog, textvariable=color_var, values=colors, state="readonly")
         color_combo.pack(anchor=tk.W, padx=10)
         color_combo.current(0)
+        
+        # Кнопки Сохранить/Отмена (как на скрине)
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, pady=10)
         
         def save():
             name = name_entry.get()
@@ -257,14 +280,46 @@ class ScriptonizerLite:
             else:
                 messagebox.showwarning("Ошибка", "Заполните все поля")
         
-        tk.Button(dialog, text="Сохранить", command=save, 
-                 bg="#4CAF50", fg="white").pack(pady=10)
+        tk.Button(btn_frame, text="Сохранить", command=save, 
+                 bg="#4CAF50", fg="white", width=20).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Отмена", command=dialog.destroy, 
+                 bg="#f44336", fg="white", width=20).pack(side=tk.LEFT, padx=10)
     
     def copy_all_scripts(self):
         text = "\n".join([f"=== {s['name']} ===\n{s['text']}\n" for s in self.scripts])
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
         messagebox.showinfo("Успех", "Все скрипты скопированы!")
+    
+    def import_scripts(self):
+        filepath = filedialog.askopenfilename(filetypes=[("TXT files", "*.txt"), ("JSON files", "*.json")])
+        if filepath:
+            try:
+                if filepath.endswith('.json'):
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        imported = json.load(f)
+                    self.scripts.extend(imported)
+                else:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    blocks = content.split('===')
+                    for block in blocks:
+                        if not block.strip():
+                            continue
+                        try:
+                            header, body = block.split('\n', 1)
+                            parts = header.strip().split('|')
+                            name = parts[0].strip()
+                            color = parts[1].strip() if len(parts) > 1 else 'white'
+                            self.scripts.append({"name": name, "text": body.strip(), "color": color})
+                        except:
+                            continue
+                
+                self.save_scripts()
+                self.refresh_scripts()
+                messagebox.showinfo("Успех", "Скрипты импортированы!")
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Не удалось импортировать: {e}")
     
     def export_to_desktop(self):
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
@@ -274,6 +329,12 @@ class ScriptonizerLite:
                 color = s.get('color', 'white')
                 f.write(f"=== {s['name']} | {color} ===\n{s['text']}\n\n")
         messagebox.showinfo("Успех", f"Сохранено: {path}")
+    
+    def open_timer_manager(self):
+        messagebox.showinfo("Таймер", "Функция управления таймером\n(будет добавлена позже)")
+    
+    def open_group_manager(self):
+        messagebox.showinfo("Группы", "Функция управления группами\n(будет добавлена позже)")
     
     # === СОХРАНЕНИЕ ===
     
