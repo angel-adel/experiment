@@ -72,6 +72,10 @@
         .angel {
             cursor: pointer;
             animation: floatAngel 3s infinite ease-in-out;
+            transition: transform 0.1s ease;
+        }
+        .angel:active {
+            transform: scale(0.95);
         }
         .angel img {
             width: 85px;
@@ -104,12 +108,17 @@
             background: rgba(255, 210, 255, 0.2);
             border: 1px solid #cf9eff;
             color: #ffeefb;
-            padding: 8px 24px;
+            padding: 10px 28px;
             border-radius: 50px;
-            font-size: 0.85rem;
+            font-size: 1rem;
             cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
         }
-        .tenderness-btn:active { transform: scale(0.96); }
+        .tenderness-btn:active {
+            transform: scale(0.96);
+            background: #aa7dff60;
+        }
         .floating-hearts {
             position: fixed;
             bottom: 0;
@@ -129,6 +138,24 @@
         @keyframes flySlow {
             0% { transform: translateY(100vh) scale(0.3); opacity: 0.6;}
             100% { transform: translateY(-12vh) scale(1.1); opacity: 0;}
+        }
+        /* стиль для падающих элементов (сердечки, звёзды) */
+        .falling-item {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            font-size: 1.5rem;
+            animation: fallUp 1.2s ease-out forwards;
+        }
+        @keyframes fallUp {
+            0% {
+                transform: translateY(0) scale(0.3);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-120px) scale(1.2);
+                opacity: 0;
+            }
         }
         @media (max-width: 550px) {
             .card { padding: 1.5rem; }
@@ -198,63 +225,116 @@
     </div>
 
     <script>
-        function initHearts() {
+        // Функция создания красивых падающих элементов
+        function createEffect(x, y, count, emojis) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const el = document.createElement('div');
+                    el.classList.add('falling-item');
+                    // выбираем случайный эмодзи из массива
+                    const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+                    el.innerHTML = randomEmoji;
+                    // случайное смещение по горизонтали
+                    const offsetX = (Math.random() - 0.5) * 120;
+                    el.style.left = (x + offsetX) + 'px';
+                    el.style.top = y + 'px';
+                    el.style.fontSize = (1 + Math.random() * 1.2) + 'rem';
+                    // случайная задержка для каскадного эффекта
+                    el.style.animationDelay = (i * 0.03) + 's';
+                    document.body.appendChild(el);
+                    // удаляем после анимации
+                    setTimeout(() => el.remove(), 1300);
+                }, i * 40);
+            }
+        }
+
+        // Функция для эффекта от кнопки (облако нежности)
+        function createCloudEffect() {
+            // получаем координаты кнопки
+            const btn = document.getElementById('sparkBtn');
+            const rect = btn.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            // много сердечек и звёзд
+            const emojis = ['💜', '💗', '💕', '💖', '✨', '🌸', '🕊️', '🌟', '💫', '⭐'];
+            createEffect(centerX, centerY, 28, emojis);
+            
+            // дополнительный визуальный эффект: кратковременное свечение кнопки
+            btn.style.transform = 'scale(0.96)';
+            btn.style.backgroundColor = '#aa7dff80';
+            btn.style.boxShadow = '0 0 20px #d4a5ff';
+            setTimeout(() => {
+                btn.style.transform = '';
+                btn.style.backgroundColor = '';
+                btn.style.boxShadow = '';
+            }, 200);
+        }
+
+        // Эффект при клике на ангела
+        function createAngelEffect(event) {
+            const rect = event.target.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            // сердечки и звёздочки
+            const emojis = ['💜', '💖', '💗', '✨', '⭐', '🪽', '🌸'];
+            createEffect(centerX, centerY, 22, emojis);
+            
+            // анимация самого ангела (взмах)
+            const angelImg = document.getElementById('angelImg');
+            angelImg.style.transform = 'scale(1.2) rotate(5deg)';
+            angelImg.style.filter = 'drop-shadow(0 0 15px #ff99ff)';
+            setTimeout(() => {
+                angelImg.style.transform = '';
+                angelImg.style.filter = '';
+            }, 250);
+        }
+
+        // Инициализация фоновых сердечек
+        function initBackgroundHearts() {
             const container = document.getElementById('heartsContainer');
             if (!container) return;
             container.innerHTML = '';
-            for (let i = 0; i < 45; i++) {
+            for (let i = 0; i < 50; i++) {
                 const heart = document.createElement('div');
                 heart.classList.add('heart');
                 const symbols = ['💜', '💗', '💕', '💖', '✨', '🕊️', '🌸', '🌟'];
                 heart.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
                 heart.style.left = Math.random() * 100 + '%';
-                heart.style.animationDuration = 5 + Math.random() * 10 + 's';
-                heart.style.animationDelay = Math.random() * 12 + 's';
-                heart.style.fontSize = 0.8 + Math.random() * 1.4 + 'rem';
+                heart.style.animationDuration = 5 + Math.random() * 12 + 's';
+                heart.style.animationDelay = Math.random() * 15 + 's';
+                heart.style.fontSize = 0.7 + Math.random() * 1.5 + 'rem';
                 container.appendChild(heart);
             }
         }
-        initHearts();
+        
+        initBackgroundHearts();
 
+        // Вешаем обработчики
         const btn = document.getElementById('sparkBtn');
         if (btn) {
-            btn.addEventListener('click', () => {
-                for (let i = 0; i < 24; i++) {
-                    const newHeart = document.createElement('div');
-                    newHeart.classList.add('heart');
-                    newHeart.innerHTML = '💜';
-                    newHeart.style.position = 'fixed';
-                    newHeart.style.left = Math.random() * 100 + '%';
-                    newHeart.style.bottom = '0px';
-                    newHeart.style.fontSize = 1 + Math.random() * 1.8 + 'rem';
-                    newHeart.style.animation = 'flySlow 1.6s linear forwards';
-                    newHeart.style.pointerEvents = 'none';
-                    document.body.appendChild(newHeart);
-                    setTimeout(() => newHeart.remove(), 1700);
-                }
-            });
+            btn.addEventListener('click', createCloudEffect);
         }
 
         const angelImg = document.getElementById('angelImg');
         if (angelImg) {
-            angelImg.addEventListener('click', (e) => {
-                e.stopPropagation();
-                angelImg.style.transform = 'scale(1.2) rotate(4deg)';
-                setTimeout(() => { angelImg.style.transform = ''; }, 280);
-                for (let s = 0; s < 12; s++) {
-                    const spark = document.createElement('div');
-                    spark.innerText = '✨';
-                    spark.style.position = 'fixed';
-                    spark.style.left = (e.clientX - 15 + Math.random() * 30) + 'px';
-                    spark.style.top = (e.clientY - 20 + Math.random() * 40) + 'px';
-                    spark.style.fontSize = '18px';
-                    spark.style.pointerEvents = 'none';
-                    spark.style.opacity = '1';
-                    spark.style.transition = 'all 0.6s ease-out';
-                    document.body.appendChild(spark);
-                    setTimeout(() => { spark.style.opacity = '0'; spark.style.transform = 'translateY(-25px)'; }, 10);
-                    setTimeout(() => spark.remove(), 700);
-                }
+            angelImg.addEventListener('click', createAngelEffect);
+        }
+
+        // Проверка загрузки картинок в консоль (для отладки)
+        const sigImg = document.getElementById('signatureImg');
+        if (sigImg) {
+            sigImg.onload = () => console.log('✅ Автограф загружен');
+            sigImg.onerror = () => console.log('❌ avtograf.png не найден');
+        }
+        if (angelImg) {
+            angelImg.onload = () => console.log('✅ Ангел загружен');
+            angelImg.onerror = () => console.log('❌ angel.png не найден');
+        }
+    </script>
+</body>
+</html>
             });
         }
 
