@@ -3,7 +3,7 @@ name: Build Scriptonizer APK
 on:
   push:
     paths:
-      - 'scriptonizer_app/**'
+      - 'main.py'
     branches: [ main ]
   workflow_dispatch:
 
@@ -27,7 +27,7 @@ jobs:
 
       - name: Build APK
         run: |
-          cd scriptonizer_app
+          # Теперь не нужно cd scriptonizer_app — мы в корне
           buildozer init
           sed -i 's/title = My Application/title = Scriptonizer/' buildozer.spec
           sed -i 's/package.name = myapp/package.name = scriptonizer/' buildozer.spec
@@ -42,4 +42,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scriptonizer-apk
-          path: scriptonizer_app/bin/*.apk
+          path: bin/*.apk
