@@ -1,0 +1,18 @@
+name: Simple Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Show files
+        run: |
+          echo "=== Файлы в корне ==="
+          ls -la
+          echo "=== Файлы в scriptonizer_app (если есть) ==="
+          ls -la scriptonizer_app/ 2>/dev/null || echo "Нет такой папки"
