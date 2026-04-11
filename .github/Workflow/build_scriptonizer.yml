@@ -1,7 +1,0 @@
-name: Build Scriptonizer APK
-on: push
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Hello"
