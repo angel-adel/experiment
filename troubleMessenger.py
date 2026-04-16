@@ -46,7 +46,7 @@ def get_smtp_server(email):
 class TroubleReporter:
     def __init__(self, root):
         self.root = root
-        self.root.title("Trouble Tracker — Красный куб")
+        self.root.title("Trouble Tracker")
         self.root.geometry("550+650")
         self.root.resizable(False, False)
 
