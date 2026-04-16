@@ -36,7 +36,7 @@ class TroubleReporter:
     def __init__(self, root):
         self.root = root
         self.root.title("Trouble Tracker — Красный куб")
-        self.root.geometry("520+500")
+        self.root.geometry("550x650")   # 'x' вместо '+'
         self.root.resizable(False, False)
 
         # Устанавливаем иконку красного куба
