@@ -2,13 +2,12 @@ import tkinter as tk
 from tkinter import ttk
 import random
 import math
-from datetime import datetime
 
 class TraderSimulator:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("📈 Симулятор трейдера")
-        self.root.geometry("600x700")
+        self.root.geometry("650x750")
         self.root.configure(bg='#0a0f1c')
         self.root.resizable(False, False)
         
@@ -27,17 +26,21 @@ class TraderSimulator:
         self.current_trend = "floating"
         self.volatility = 2
         
+        # Скорость обновления (в секундах)
+        self.update_interval = 3000  # миллисекунды, по умолчанию 3 сек
+        self.update_job = None
+        
         # Создаём интерфейс
         self.setup_ui()
         
         # Запускаем обновление цены
-        self.update_price()
+        self.root.after(1000, self.first_update)
         
         self.root.mainloop()
     
     def setup_ui(self):
         # График
-        self.canvas = tk.Canvas(self.root, width=550, height=250, bg='#1a1a2e', highlightthickness=0)
+        self.canvas = tk.Canvas(self.root, width=580, height=260, bg='#1a1a2e', highlightthickness=0)
         self.canvas.pack(pady=10)
         
         # Информация об акции
@@ -60,23 +63,23 @@ class TraderSimulator:
         portfolio_frame.pack(fill=tk.X, padx=10, pady=5)
         
         tk.Label(portfolio_frame, text="💰 БАЛАНС", font=("Arial", 10), 
-                 bg='#1a1a2e', fg='#aaa').grid(row=0, column=0, padx=20, pady=5)
+                 bg='#1a1a2e', fg='#aaa').grid(row=0, column=0, padx=30, pady=5)
         tk.Label(portfolio_frame, text="📊 АКЦИЙ", font=("Arial", 10), 
-                 bg='#1a1a2e', fg='#aaa').grid(row=0, column=1, padx=20, pady=5)
+                 bg='#1a1a2e', fg='#aaa').grid(row=0, column=1, padx=30, pady=5)
         tk.Label(portfolio_frame, text="💎 КАПИТАЛ", font=("Arial", 10), 
-                 bg='#1a1a2e', fg='#aaa').grid(row=0, column=2, padx=20, pady=5)
+                 bg='#1a1a2e', fg='#aaa').grid(row=0, column=2, padx=30, pady=5)
         
         self.balance_label = tk.Label(portfolio_frame, text="10000", font=("Arial", 16, "bold"),
                                        bg='#1a1a2e', fg='#2ecc71')
-        self.balance_label.grid(row=1, column=0, padx=20, pady=5)
+        self.balance_label.grid(row=1, column=0, padx=30, pady=5)
         
         self.shares_label = tk.Label(portfolio_frame, text="0", font=("Arial", 16, "bold"),
                                       bg='#1a1a2e', fg='#f39c12')
-        self.shares_label.grid(row=1, column=1, padx=20, pady=5)
+        self.shares_label.grid(row=1, column=1, padx=30, pady=5)
         
         self.capital_label = tk.Label(portfolio_frame, text="10000", font=("Arial", 16, "bold"),
                                        bg='#1a1a2e', fg='#2ecc71')
-        self.capital_label.grid(row=1, column=2, padx=20, pady=5)
+        self.capital_label.grid(row=1, column=2, padx=30, pady=5)
         
         # Торговая панель
         trade_frame = tk.Frame(self.root, bg='#0f0f1a')
@@ -95,11 +98,11 @@ class TraderSimulator:
         btn_frame.pack(pady=10)
         
         tk.Button(btn_frame, text="🟢 КУПИТЬ", font=("Arial", 12, "bold"),
-                  bg='#2ecc71', fg='white', padx=20, pady=8,
+                  bg='#2ecc71', fg='white', padx=25, pady=8,
                   command=self.buy_shares).pack(side=tk.LEFT, padx=10)
         
         tk.Button(btn_frame, text="🔴 ПРОДАТЬ", font=("Arial", 12, "bold"),
-                  bg='#e74c3c', fg='white', padx=20, pady=8,
+                  bg='#e74c3c', fg='white', padx=25, pady=8,
                   command=self.sell_shares).pack(side=tk.LEFT, padx=10)
         
         # Кнопки управления
@@ -107,12 +110,33 @@ class TraderSimulator:
         control_frame.pack(fill=tk.X, padx=10, pady=5)
         
         tk.Button(control_frame, text="🔄 СБРОС", font=("Arial", 10, "bold"),
-                  bg='#e74c3c', fg='white', padx=15, pady=5,
+                  bg='#e74c3c', fg='white', padx=20, pady=5,
                   command=self.reset_game).pack(side=tk.LEFT, padx=5)
         
         tk.Button(control_frame, text="⏸️ ПАУЗА", font=("Arial", 10, "bold"),
-                  bg='#f39c12', fg='white', padx=15, pady=5,
+                  bg='#f39c12', fg='white', padx=20, pady=5,
                   command=self.toggle_pause).pack(side=tk.LEFT, padx=5)
+        
+        # Регулировка скорости
+        speed_frame = tk.Frame(self.root, bg='#0f0f1a')
+        speed_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        tk.Label(speed_frame, text="⚡ СКОРОСТЬ ОБНОВЛЕНИЯ:", font=("Arial", 10),
+                 bg='#0f0f1a', fg='white').pack(side=tk.LEFT, padx=5)
+        
+        self.speed_var = tk.IntVar(value=3)
+        self.speed_scale = tk.Scale(speed_frame, from_=1, to=10, orient=tk.HORIZONTAL,
+                                     variable=self.speed_var, length=150, bg='#0f0f1a',
+                                     fg='white', highlightthickness=0,
+                                     command=self.change_speed)
+        self.speed_scale.pack(side=tk.LEFT, padx=5)
+        
+        tk.Label(speed_frame, text="сек", font=("Arial", 10),
+                 bg='#0f0f1a', fg='white').pack(side=tk.LEFT)
+        
+        self.speed_status = tk.Label(speed_frame, text="(3 сек)", font=("Arial", 9),
+                                      bg='#0f0f1a', fg='#aaa')
+        self.speed_status.pack(side=tk.LEFT, padx=10)
         
         # Стартовый капитал
         start_frame = tk.Frame(self.root, bg='#0f0f1a')
@@ -133,7 +157,7 @@ class TraderSimulator:
         # Новости
         self.news_label = tk.Label(self.root, text="📰 Добро пожаловать! Покупай дёшево, продавай дорого.",
                                     font=("Arial", 10), bg='#1a1a2e', fg='#ffd700',
-                                    wraplength=550, justify='center')
+                                    wraplength=600, justify='center')
         self.news_label.pack(fill=tk.X, padx=10, pady=10)
         
         # Статус
@@ -141,11 +165,24 @@ class TraderSimulator:
                                       font=("Arial", 9), bg='#0a0f1c', fg='#aaa')
         self.status_label.pack(pady=5)
     
+    def change_speed(self, val):
+        """Изменение скорости обновления графика"""
+        new_interval = int(float(val))
+        self.update_interval = new_interval * 1000
+        self.speed_status.config(text=f"({new_interval} сек)")
+        
+        # Перезапускаем таймер с новой скоростью
+        if self.is_running and self.update_job is not None:
+            self.root.after_cancel(self.update_job)
+            self.update_job = self.root.after(self.update_interval, self.update_price)
+        
+        self.show_message(f"⚡ Скорость обновления: {new_interval} секунд", False)
+    
     def generate_price(self):
         if not self.is_running:
             return
         
-        # Меняем тренд
+        # Меняем тренд каждые 30-70 шагов
         self.trend_cycle += 1
         if self.trend_cycle > random.randint(30, 70):
             self.trend_cycle = 0
@@ -163,7 +200,7 @@ class TraderSimulator:
                 self.trend_strength = 0
                 self.news_label.config(text="🟡 РЫНОК В БОКОВИКЕ")
         
-        # Случайные новости
+        # Случайные новости (5% шанс)
         if random.random() < 0.05:
             if random.random() < 0.5:
                 spike = 5 + random.random() * 10
@@ -224,8 +261,8 @@ class TraderSimulator:
         if len(self.price_history) < 2:
             return
         
-        width = 540
-        height = 240
+        width = 570
+        height = 250
         
         # Рисуем сетку
         for i in range(5):
@@ -348,9 +385,14 @@ class TraderSimulator:
         self.root.after(2000, lambda: self.status_label.config(
             text="📈 График обновляется каждую секунду", fg='#aaa'))
     
+    def first_update(self):
+        self.generate_price()
+        self.update_job = self.root.after(self.update_interval, self.update_price)
+    
     def update_price(self):
         self.generate_price()
-        self.root.after(1000, self.update_price)
+        if self.is_running:
+            self.update_job = self.root.after(self.update_interval, self.update_price)
 
 
 if __name__ == "__main__":
