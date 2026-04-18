@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>📈 Трейдер - RSI + Турнир | 22 акции</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #0a0f1c;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+        .container {
+            background: #0f0f1a;
+            border-radius: 25px;
+            padding: 15px;
+            max-width: 800px;
+            width: 100%;
+            border: 2px solid #2ecc71;
+            max-height: 98vh;
+            overflow-y: auto;
+        }
+        canvas {
+            background: #1a1a2e;
+            border-radius: 15px;
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: auto;
+            border: 1px solid #2ecc71;
+        }
+        .balance-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .balance-item {
+            text-align: center;
+        }
+        .balance-label {
+            font-size: 10px;
+            color: #aaa;
+        }
+        .balance-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .usd-value { color: #2ecc71; }
+        .rub-value { color: #f39c12; }
+        
+        .rate-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 8px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .rate-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f39c12;
+        }
+        
+        .rsi-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 8px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .rsi-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .rsi-overbought { color: #e74c3c; }
+        .rsi-oversold { color: #2ecc71; }
+        .rsi-neutral { color: #f39c12; }
+        
+        .tournament-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 8px;
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .tournament-btn {
+            background: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .records-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 11px;
+            text-align: center;
+        }
+        
+        .search-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 2;
+            background: #0a0a1a;
+            color: #f39c12;
+            border: 1px solid #2ecc71;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        .sector-filter {
+            flex: 1;
+            background: #0a0a1a;
+            color: #f39c12;
+            border: 1px solid #2ecc71;
+            border-radius: 20px;
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        .stock-selector {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 120px;
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .stock-btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .stock-btn.active {
+            background: #2ecc71;
+            box-shadow: 0 0 8px #2ecc71;
+        }
+        .stock-btn:active {
+            transform: scale(0.97);
+        }
+        
+        .portfolio-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .portfolio-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            border-bottom: 1px solid #2c3e50;
+            font-size: 12px;
+        }
+        .portfolio-stock {
+            font-weight: bold;
+        }
+        .portfolio-count {
+            color: #2ecc71;
+        }
+        
+        .trade-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .trade-input {
+            background: #0a0a1a;
+            color: #f39c12;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            width: 100px;
+            padding: 8px;
+            border: 2px solid #2ecc71;
+            border-radius: 15px;
+        }
+        .buy-btn {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .sell-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            flex: 1;
+            background: #34495e;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .reset-btn { background: #e74c3c; }
+        .pause-btn { background: #f39c12; }
+        .save-btn { background: #3498db; }
+        .convert-btn { background: #9b59b6; }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .speed-slider {
+            width: 200px;
+        }
+        
+        .news {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 11px;
+            color: #ffd700;
+            text-align: center;
+        }
+        .status {
+            font-size: 10px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 8px;
+        }
+        @media (max-width: 550px) {
+            .balance-value { font-size: 14px; }
+            .stock-btn { padding: 4px 8px; font-size: 9px; }
+            .portfolio-item { font-size: 10px; }
+            .trade-input { width: 70px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <canvas id="chartCanvas" width="750" height="250"></canvas>
+    
+    <div class="balance-panel">
+        <div class="balance-item">
+            <div class="balance-label">💰 USD</div>
+            <div class="balance-value usd-value" id="usdBalance">10000.00</div>
+        </div>
+        <div class="balance-item">
+            <div class="balance-label">💵 RUB</div>
+            <div class="balance-value rub-value" id="rubBalance">0.00</div>
+        </div>
+    </div>
+    
+    <div class="rate-panel">
+        <span>💱 КУРС USD/RUB</span>
+        <span class="rate-value" id="usdRubRate">95.00</span>
+        <button id="convertUsdToRub" class="convert-btn" style="padding:5px 10px;">USD→RUB</button>
+        <button id="convertRubToUsd" class="convert-btn" style="padding:5px 10px;">RUB→USD</button>
+    </div>
+    
+    <div class="rsi-panel">
+        <span>📊 RSI (14):</span>
+        <span class="rsi-value" id="rsiValue">50.0</span>
+        <span id="rsiSignal" style="font-size:11px;">⚖️ НЕЙТРАЛЬНО</span>
+    </div>
+    
+    <div class="tournament-panel">
+        <span>🏆 ТУРНИР:</span>
+        <button id="dailyTournamentBtn" class="tournament-btn">📅 ДНЕВНОЙ (50 ходов)</button>
+        <button id="weeklyTournamentBtn" class="tournament-btn">📆 НЕДЕЛЬНЫЙ (250 ходов)</button>
+        <span id="tournamentStatus">⚡ ТУРНИР НЕ АКТИВЕН</span>
+    </div>
+    
+    <div class="records-panel">
+        <span>🏆 РЕКОРДЫ: Дневной: <span id="bestDaily">0</span> | Недельный: <span id="bestWeekly">0</span></span>
+    </div>
+    
+    <div class="search-panel">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск акции...">
+        <select id="sectorFilter" class="sector-filter">
+            <option value="all">Все сектора</option>
+        </select>
+    </div>
+    
+    <div class="stock-selector" id="stockSelector"></div>
+    
+    <div class="portfolio-panel" id="portfolioPanel"></div>
+    
+    <div class="trade-panel">
+        <input type="number" id="tradeAmount" class="trade-input" value="1" min="1" step="1">
+        <button id="buyBtn" class="buy-btn">🟢 КУПИТЬ</button>
+        <button id="sellBtn" class="sell-btn">🔴 ПРОДАТЬ</button>
+    </div>
+    
+    <div class="controls">
+        <button id="resetBtn" class="reset-btn">🔄 СБРОС</button>
+        <button id="pauseBtn" class="pause-btn">⏸️ ПАУЗА</button>
+        <button id="saveBtn" class="save-btn">💾 СОХРАНИТЬ</button>
+    </div>
+    
+    <div class="speed-control">
+        <span>⚡ СКОРОСТЬ:</span>
+        <input type="range" id="speedSlider" class="speed-slider" min="1" max="10" value="3" step="1">
+        <span id="speedValue" style="color:#2ecc71;">3</span>
+        <span>сек</span>
+    </div>
+    
+    <div class="news" id="newsArea">
+        📰 Добро пожаловать! Торгуйте акциями, конвертируйте валюту.
+    </div>
+    <div class="status" id="statusMsg">
+        📈 График обновляется каждые 3 секунды
+    </div>
+</div>
+<script>
+    // ----- 22 АКЦИИ -----
+    const stocksData = [
+        // IT сектор
+        { name: "Tech Corp", price: 100, sector: "IT", volatility: 2.5, color: "#2ecc71" },
+        { name: "LogiTech", price: 220, sector: "IT", volatility: 3.2, color: "#1abc9c" },
+        { name: "SoftDev", price: 85, sector: "IT", volatility: 2.8, color: "#27ae60" },
+        { name: "DataCore", price: 145, sector: "IT", volatility: 3.0, color: "#2ecc71" },
+        { name: "CyberSys", price: 190, sector: "IT", volatility: 3.5, color: "#58d68d" },
+        
+        // Нефтегаз
+        { name: "Lukoil", price: 320, sector: "Oil&Gas", volatility: 2.2, color: "#f1c40f" },
+        { name: "Gazprom", price: 150, sector: "Oil&Gas", volatility: 2.0, color: "#95a5a6" },
+        { name: "Rosneft", price: 280, sector: "Oil&Gas", volatility: 2.3, color: "#f39c12" },
+        { name: "Surgut", price: 45, sector: "Oil&Gas", volatility: 2.5, color: "#e67e22" },
+        { name: "Tatneft", price: 210, sector: "Oil&Gas", volatility: 2.1, color: "#f1c40f" },
+        
+        // Энергетика
+        { name: "Green Energy", price: 50, sector: "Energy", volatility: 3.0, color: "#3498db" },
+        { name: "RusHydro", price: 35, sector: "Energy", volatility: 2.5, color: "#5dade2" },
+        { name: "InterRAO", price: 28, sector: "Energy", volatility: 2.8, color: "#85c1e9" },
+        { name: "Rosatom", price: 95, sector: "Energy", volatility: 2.0, color: "#3498db" },
+        
+        // Промышленность
+        { name: "Metal Industries", price: 75, sector: "Industrial", volatility: 2.0, color: "#e74c3c" },
+        { name: "Nornickel", price: 420, sector: "Industrial", volatility: 2.8, color: "#e74c3c" },
+        { name: "Severstal", price: 185, sector: "Industrial", volatility: 2.3, color: "#ec7063" },
+        { name: "MMK", price: 55, sector: "Industrial", volatility: 2.4, color: "#e74c3c" },
+        
+        // Финансы
+        { name: "Minfin", price: 180, sector: "Finance", volatility: 1.8, color: "#9b59b6" },
+        { name: "Sberbank", price: 125, sector: "Finance", volatility: 2.2, color: "#a569bd" },
+        { name: "VTB", price: 18, sector: "Finance", volatility: 2.5, color: "#bb8fce" },
+        { name: "AlfaBank", price: 95, sector: "Finance", volatility: 2.0, color: "#9b59b6" }
+    ];
+    
+    // Преобразуем в объект для удобного доступа
+    let stocks = {};
+    let portfolio = {};
+    
+    stocksData.forEach(s => {
+        stocks[s.name] = {
+            price: s.price,
+            history: [s.price],
+            color: s.color,
+            volatility: s.volatility,
+            sector: s.sector
+        };
+        portfolio[s.name] = 0;
+    });
+    
+    // ----- ВАЛЮТЫ -----
+    let usdBalance = 10000;
+    let rubBalance = 0;
+    let usdRubRate = 95;
+    let rateHistory = [95];
+    
+    // ----- ПАРАМЕТРЫ -----
+    let currentStock = "Tech Corp";
+    let isRunning = true;
+    let updateInterval = 3000;
+    let updateTimer = null;
+    
+    // ----- RSI -----
+    let currentRSI = 50;
+    
+    // ----- ТУРНИР -----
+    let dailyScore = 0;
+    let dailyMoves = 0;
+    let bestDailyScore = 0;
+    let weeklyScore = 0;
+    let weeklyMoves = 0;
+    let bestWeeklyScore = 0;
+    let tournamentMode = "daily";
+    let tournamentActive = false;
+    
+    // ----- DOM ЭЛЕМЕНТЫ -----
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 750;
+    canvas.height = 250;
+    
+    const usdBalanceSpan = document.getElementById('usdBalance');
+    const rubBalanceSpan = document.getElementById('rubBalance');
+    const usdRubRateSpan = document.getElementById('usdRubRate');
+    const newsArea = document.getElementById('newsArea');
+    const statusMsg = document.getElementById('statusMsg');
+    const tradeAmountInput = document.getElementById('tradeAmount');
+    const searchInput = document.getElementById('searchInput');
+    const sectorFilter = document.getElementById('sectorFilter');
+    const stockSelector = document.getElementById('stockSelector');
+    const portfolioPanel = document.getElementById('portfolioPanel');
+    // ----- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ -----
+    function updateUI() {
+        usdBalanceSpan.innerText = usdBalance.toFixed(2);
+        rubBalanceSpan.innerText = rubBalance.toFixed(2);
+        usdRubRateSpan.innerText = usdRubRate.toFixed(2);
+        renderPortfolio();
+    }
+    
+    function renderPortfolio() {
+        let html = '';
+        for (let [name, count] of Object.entries(portfolio)) {
+            if (count > 0) {
+                html += `<div class="portfolio-item">
+                    <span class="portfolio-stock" style="color:${stocks[name].color}">${name}</span>
+                    <span class="portfolio-count">${count} шт</span>
+                </div>`;
+            }
+        }
+        if (html === '') html = '<div style="text-align:center; padding:10px;">📭 Портфель пуст</div>';
+        portfolioPanel.innerHTML = html;
+    }
+    
+    function renderStockSelector() {
+        const searchText = searchInput.value.toLowerCase();
+        const sector = sectorFilter.value;
+        
+        let filtered = stocksData.filter(s => {
+            const matchName = s.name.toLowerCase().includes(searchText);
+            const matchSector = sector === 'all' || s.sector === sector;
+            return matchName && matchSector;
+        });
+        
+        let html = '';
+        filtered.forEach(s => {
+            const activeClass = (currentStock === s.name) ? 'active' : '';
+            html += `<button data-stock="${s.name}" class="stock-btn ${activeClass}" style="background:${s.color}20; border-left:3px solid ${s.color}">
+                ${s.name}
+            </button>`;
+        });
+        stockSelector.innerHTML = html;
+        
+        document.querySelectorAll('.stock-btn').forEach(btn => {
+            btn.addEventListener('click', () => changeStock(btn.dataset.stock));
+        });
+    }
+    
+    function initSectorFilter() {
+        const sectors = [...new Set(stocksData.map(s => s.sector))];
+        sectors.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s;
+            option.textContent = s;
+            sectorFilter.appendChild(option);
+        });
+        sectorFilter.addEventListener('change', () => renderStockSelector());
+        searchInput.addEventListener('input', () => renderStockSelector());
+    }
+    
+    function showMessage(msg, isError) {
+        statusMsg.innerText = msg;
+        statusMsg.style.color = isError ? "#ff6666" : "#aaa";
+        setTimeout(() => {
+            if (statusMsg.innerText === msg) {
+                statusMsg.innerText = `📈 График обновляется каждые ${updateInterval/1000} секунды`;
+                statusMsg.style.color = "#aaa";
+            }
+        }, 2500);
+    }
+    
+    function calculateRSI(prices, period = 14) {
+        if (prices.length < period + 1) return 50;
+        
+        let gains = 0;
+        let losses = 0;
+        
+        for (let i = prices.length - period; i < prices.length; i++) {
+            let change = prices[i] - prices[i-1];
+            if (change > 0) gains += change;
+            else losses -= change;
+        }
+        
+        let avgGain = gains / period;
+        let avgLoss = losses / period;
+        
+        if (avgLoss === 0) return 100;
+        let rs = avgGain / avgLoss;
+        return 100 - (100 / (1 + rs));
+    }
+    
+    function updateRSI() {
+        const stock = stocks[currentStock];
+        const prices = stock.history;
+        currentRSI = calculateRSI(prices, 14);
+        
+        const rsiSpan = document.getElementById('rsiValue');
+        rsiSpan.innerText = currentRSI.toFixed(1);
+        
+        if (currentRSI > 70) {
+            rsiSpan.className = "rsi-value rsi-overbought";
+            document.getElementById('rsiSignal').innerHTML = "📉 ПЕРЕКУПЛЕНО! ПОРА ПРОДАВАТЬ";
+        } else if (currentRSI < 30) {
+            rsiSpan.className = "rsi-value rsi-oversold";
+            document.getElementById('rsiSignal').innerHTML = "📈 ПЕРЕПРОДАНО! ПОРА ПОКУПАТЬ";
+        } else {
+            rsiSpan.className = "rsi-value rsi-neutral";
+            document.getElementById('rsiSignal').innerHTML = "⚖️ НЕЙТРАЛЬНО";
+        }
+    }
+    
+    function loadRecords() {
+        const saved = localStorage.getItem("traderRecords");
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                bestDailyScore = data.bestDailyScore || 0;
+                bestWeeklyScore = data.bestWeeklyScore || 0;
+                document.getElementById('bestDaily').innerText = bestDailyScore;
+                document.getElementById('bestWeekly').innerText = bestWeeklyScore;
+            } catch(e) {}
+        }
+    }
+    
+    function saveRecords() {
+        localStorage.setItem("traderRecords", JSON.stringify({
+            bestDailyScore: bestDailyScore,
+            bestWeeklyScore: bestWeeklyScore
+        }));
+    }
+    
+    function startTournament(mode) {
+        tournamentActive = true;
+        tournamentMode = mode;
+        if (mode === "daily") {
+            dailyScore = 0;
+            dailyMoves = 0;
+            showMessage("🏆 ДНЕВНОЙ ТУРНИР НАЧАТ! 50 ходов", false);
+        } else {
+            weeklyScore = 0;
+            weeklyMoves = 0;
+            showMessage("🏆 НЕДЕЛЬНЫЙ ТУРНИР НАЧАТ! 250 ходов", false);
+        }
+        updateRecordsDisplay();
+    }
+    
+    function endTournament() {
+        tournamentActive = false;
+        let finalScore = tournamentMode === "daily" ? dailyScore : weeklyScore;
+        let bestScore = tournamentMode === "daily" ? bestDailyScore : bestWeeklyScore;
+        
+        if (finalScore > bestScore) {
+            if (tournamentMode === "daily") bestDailyScore = finalScore;
+            else bestWeeklyScore = finalScore;
+            saveRecords();
+            showMessage(`🏆 НОВЫЙ РЕКОРД! ${finalScore.toFixed(0)} очков! 🏆`, false);
+        } else {
+            showMessage(`🏁 ТУРНИР ЗАВЕРШЁН! Результат: ${finalScore.toFixed(0)} очков. Рекорд: ${bestScore.toFixed(0)}`, false);
+        }
+        updateRecordsDisplay();
+    }
+    
+    function updateTournament(profit) {
+        if (!tournamentActive) return;
+        
+        if (tournamentMode === "daily") {
+            dailyScore += profit;
+            dailyMoves++;
+            if (dailyMoves >= 50) endTournament();
+        } else {
+            weeklyScore += profit;
+            weeklyMoves++;
+            if (weeklyMoves >= 250) endTournament();
+        }
+        updateRecordsDisplay();
+    }
+    
+    function updateRecordsDisplay() {
+        document.getElementById('bestDaily').innerText = bestDailyScore.toFixed(0);
+        document.getElementById('bestWeekly').innerText = bestWeeklyScore.toFixed(0);
+        if (tournamentActive) {
+            if (tournamentMode === "daily") {
+                document.getElementById('tournamentStatus').innerHTML = `📅 ДНЕВНОЙ: ${dailyScore.toFixed(0)} очков (ход ${dailyMoves}/50)`;
+            } else {
+                document.getElementById('tournamentStatus').innerHTML = `📆 НЕДЕЛЬНЫЙ: ${weeklyScore.toFixed(0)} очков (ход ${weeklyMoves}/250)`;
+            }
+        } else {
+            document.getElementById('tournamentStatus').innerHTML = `⚡ ТУРНИР НЕ АКТИВЕН`;
+        }
+    }
+    // ----- ГЕНЕРАЦИЯ ЦЕН -----
+    function generatePrice(stockName) {
+        const stock = stocks[stockName];
+        let price = stock.price;
+        
+        let change = (Math.random() - 0.5) * stock.volatility;
+        change += (Math.random() - 0.5) * 0.5;
+        
+        const avgPrice = stocksData.find(s => s.name === stockName).price;
+        change += (avgPrice - price) * 0.02 / 100;
+        
+        let newPrice = price * (1 + change / 100);
+        if (newPrice < 5) newPrice = 5;
+        if (newPrice > 1000) newPrice = 1000;
+        
+        stock.price = newPrice;
+        stock.history.push(newPrice);
+        if (stock.history.length > 50) stock.history.shift();
+        
+        return newPrice;
+    }
+    
+    function generateRate() {
+        let change = (Math.random() - 0.5) * 1.5;
+        usdRubRate *= (1 + change / 100);
+        if (usdRubRate < 60) usdRubRate = 60;
+        if (usdRubRate > 140) usdRubRate = 140;
+        
+        rateHistory.push(usdRubRate);
+        if (rateHistory.length > 50) rateHistory.shift();
+        usdRubRateSpan.innerText = usdRubRate.toFixed(2);
+    }
+    
+    function drawChart() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#1a1a2e";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const stock = stocks[currentStock];
+        const history = stock.history;
+        
+        if (history.length < 2) return;
+        
+        ctx.strokeStyle = "#2c3e50";
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i <= 4; i++) {
+            let y = canvas.height - (i * canvas.height / 4);
+            ctx.beginPath();
+            ctx.moveTo(30, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+        
+        let minPrice = Math.min(...history);
+        let maxPrice = Math.max(...history);
+        let range = maxPrice - minPrice;
+        if (range < 1) range = 1;
+        
+        let stepX = (canvas.width - 30) / (history.length - 1);
+        let points = [];
+        
+        for (let i = 0; i < history.length; i++) {
+            let x = 30 + i * stepX;
+            let y = canvas.height - ((history[i] - minPrice) / range) * (canvas.height - 40) - 10;
+            points.push({x, y});
+        }
+        
+        ctx.beginPath();
+        ctx.strokeStyle = stock.color;
+        ctx.lineWidth = 2;
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+        
+        ctx.fillStyle = "#f39c12";
+        for (let i = 0; i < points.length; i += 5) {
+            ctx.beginPath();
+            ctx.arc(points[i].x, points[i].y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.fillStyle = stock.color;
+        ctx.font = "10px Arial";
+        ctx.fillText(`Текущая: ${stock.price.toFixed(2)}`, canvas.width - 100, 20);
+        ctx.fillStyle = "#aaa";
+        ctx.fillText(`Мин: ${minPrice.toFixed(2)}`, 10, 20);
+        ctx.fillText(`Макс: ${maxPrice.toFixed(2)}`, 10, 35);
+        ctx.fillText(`${stock.sector}`, canvas.width - 100, 40);
+    }
+    function updateAllPrices() {
+        if (!isRunning) return;
+        
+        for (let stockName in stocks) {
+            generatePrice(stockName);
+        }
+        generateRate();
+        
+        if (Math.random() < 0.05) {
+            const stocksList = Object.keys(stocks);
+            const randomStock = stocksList[Math.floor(Math.random() * stocksList.length)];
+            if (Math.random() < 0.5) {
+                stocks[randomStock].price *= 1.1;
+                newsArea.innerHTML = `📰 🟢 ХОРОШАЯ НОВОСТЬ! ${randomStock} выросла на +10%`;
+                showMessage(`🟢 ${randomStock} выросла на +10%`, false);
+            } else {
+                stocks[randomStock].price *= 0.9;
+                newsArea.innerHTML = `📰 🔴 ПЛОХАЯ НОВОСТЬ! ${randomStock} упала на -10%`;
+                showMessage(`🔴 ${randomStock} упала на -10%`, true);
+            }
+        }
+        
+        updateUI();
+        drawChart();
+        updateRSI();
+        updateRecordsDisplay();
+    }
+    
+    function buyStock() {
+        let amount = parseInt(tradeAmountInput.value);
+        if (isNaN(amount) || amount <= 0) {
+            showMessage("❌ Введите корректное количество", true);
+            return;
+        }
+        
+        let price = stocks[currentStock].price;
+        let cost = amount * price;
+        
+        if (cost > usdBalance) {
+            showMessage(`❌ Недостаточно USD! Нужно $${cost.toFixed(2)}`, true);
+            return;
+        }
+        
+        let oldCapital = usdBalance + (portfolio[currentStock] * price);
+        usdBalance -= cost;
+        portfolio[currentStock] += amount;
+        let newCapital = usdBalance + (portfolio[currentStock] * stocks[currentStock].price);
+        let profit = newCapital - oldCapital;
+        
+        updateTournament(profit);
+        updateUI();
+        showMessage(`🟢 Куплено ${amount} ${currentStock} по $${price.toFixed(2)}`, false);
+    }
+    
+    function sellStock() {
+        let amount = parseInt(tradeAmountInput.value);
+        if (isNaN(amount) || amount <= 0) {
+            showMessage("❌ Введите корректное количество", true);
+            return;
+        }
+        
+        if (amount > portfolio[currentStock]) {
+            showMessage(`❌ У вас только ${portfolio[currentStock]} акций`, true);
+            return;
+        }
+        
+        let price = stocks[currentStock].price;
+        let revenue = amount * price;
+        
+        let oldCapital = usdBalance + (portfolio[currentStock] * price);
+        usdBalance += revenue;
+        portfolio[currentStock] -= amount;
+        let newCapital = usdBalance + (portfolio[currentStock] * stocks[currentStock].price);
+        let profit = newCapital - oldCapital;
+        
+        updateTournament(profit);
+        updateUI();
+        showMessage(`🔴 Продано ${amount} ${currentStock} по $${price.toFixed(2)}`, false);
+    }
+    
+    function convertUsdToRub() {
+        if (usdBalance <= 0) {
+            showMessage("❌ Нет долларов для конвертации", true);
+            return;
+        }
+        let rubAmount = usdBalance * usdRubRate;
+        rubBalance += rubAmount;
+        usdBalance = 0;
+        updateUI();
+        showMessage(`💱 Конвертировано $${usdBalance.toFixed(2)} → ${rubAmount.toFixed(2)} ₽`, false);
+    }
+    
+    function convertRubToUsd() {
+        if (rubBalance <= 0) {
+            showMessage("❌ Нет рублей для конвертации", true);
+            return;
+        }
+        let usdAmount = rubBalance / usdRubRate;
+        usdBalance += usdAmount;
+        rubBalance = 0;
+        updateUI();
+        showMessage(`💱 Конвертировано ${rubBalance.toFixed(2)} ₽ → $${usdAmount.toFixed(2)}`, false);
+    }
+    
+    function changeStock(stockName) {
+        currentStock = stockName;
+        drawChart();
+        updateRSI();
+        renderStockSelector();
+    }
+    
+    function resetGame() {
+        usdBalance = 10000;
+        rubBalance = 0;
+        usdRubRate = 95;
+        
+        stocksData.forEach(s => {
+            stocks[s.name].price = s.price;
+            stocks[s.name].history = [s.price];
+            portfolio[s.name] = 0;
+        });
+        rateHistory = [95];
+        tournamentActive = false;
+        
+        updateUI();
+        drawChart();
+        updateRSI();
+        updateRecordsDisplay();
+        renderStockSelector();
+        showMessage("🔄 Игра сброшена", false);
+    }
+    
+    function togglePause() {
+        isRunning = !isRunning;
+        const pauseBtn = document.getElementById('pauseBtn');
+        pauseBtn.innerText = isRunning ? "⏸️ ПАУЗА" : "▶️ ПУСК";
+        pauseBtn.style.background = isRunning ? "#f39c12" : "#2ecc71";
+        showMessage(isRunning ? "▶️ Рынок открыт" : "⏸️ Рынок на паузе", false);
+    }
+    
+    function changeSpeed() {
+        let newSpeed = parseInt(document.getElementById('speedSlider').value);
+        updateInterval = newSpeed * 1000;
+        document.getElementById('speedValue').innerText = newSpeed;
+        statusMsg.innerText = `📈 График обновляется каждые ${newSpeed} секунды`;
+        
+        if (updateTimer) clearInterval(updateTimer);
+        if (isRunning) {
+            updateTimer = setInterval(() => {
+                updateAllPrices();
+            }, updateInterval);
+        }
+    }
+    
+    function saveData() {
+        const data = {
+            usdBalance, rubBalance, usdRubRate, portfolio,
+            stockPrices: {},
+            stockHistories: {}
+        };
+        for (let name in stocks) {
+            data.stockPrices[name] = stocks[name].price;
+            data.stockHistories[name] = stocks[name].history;
+        }
+        localStorage.setItem("traderData22", JSON.stringify(data));
+        showMessage("💾 Данные сохранены", false);
+    }
+    
+    function loadData() {
+        const saved = localStorage.getItem("traderData22");
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                usdBalance = data.usdBalance;
+                rubBalance = data.rubBalance;
+                usdRubRate = data.usdRubRate;
+                portfolio = data.portfolio;
+                for (let name in data.stockPrices) {
+                    if (stocks[name]) {
+                        stocks[name].price = data.stockPrices[name];
+                        stocks[name].history = data.stockHistories[name] || [data.stockPrices[name]];
+                    }
+                }
+                updateUI();
+                drawChart();
+                updateRSI();
+                renderStockSelector();
+                showMessage("📁 Данные загружены", false);
+            } catch(e) { showMessage("❌ Ошибка загрузки", true); }
+        }
+    }
+    // ----- ОБРАБОТЧИКИ -----
+    document.getElementById('buyBtn').addEventListener('click', buyStock);
+    document.getElementById('sellBtn').addEventListener('click', sellStock);
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+    document.getElementById('pauseBtn').addEventListener('click', togglePause);
+    document.getElementById('saveBtn').addEventListener('click', saveData);
+    document.getElementById('convertUsdToRub').addEventListener('click', convertUsdToRub);
+    document.getElementById('convertRubToUsd').addEventListener('click', convertRubToUsd);
+    document.getElementById('speedSlider').addEventListener('input', changeSpeed);
+    document.getElementById('dailyTournamentBtn').addEventListener('click', () => startTournament("daily"));
+    document.getElementById('weeklyTournamentBtn').addEventListener('click', () => startTournament("weekly"));
+    
+    // ----- ЗАПУСК -----
+    initSectorFilter();
+    renderStockSelector();
+    loadData();
+    loadRecords();
+    updateUI();
+    drawChart();
+    updateRSI();
+    updateRecordsDisplay();
+    
+    updateTimer = setInterval(() => {
+        updateAllPrices();
+    }, updateInterval);
+    
+    showMessage("📈 Мультивалютный трейдер (22 акции) с RSI и турнирами запущен!", false);
+</script>
+</body>
+</html>
