@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Релакс — бегущая строка</title>
+  <!-- PWA манифест прямо в файле -->
+  <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Релакс%22,%22short_name%22:%22Релакс%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%221a0b2e%22,%22theme_color%22:%228b5cf6%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%238b5cf6'/%3E%3Ctext x='50' y='67' font-size='50' text-anchor='middle' fill='white'%3E🌀%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none; /* чтобы текст строки не выделялся случайно */
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #2e1a47 0%, #1a0b2e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+      transition: background 0.3s ease;
+      padding: 16px;
+    }
+
+    /* Основной контейнер с мягким свечением */
+    .relax-container {
+      width: 100%;
+      max-width: 800px;
+      background: rgba(20, 10, 35, 0.4);
+      backdrop-filter: blur(8px);
+      border-radius: 64px;
+      padding: 24px 20px 32px;
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(139, 92, 246, 0.2);
+      transition: all 0.2s;
+    }
+
+    /* Зона бегущей строки — релакс-центр */
+    .marquee-stage {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 80px;
+      padding: 16px 12px;
+      margin-bottom: 32px;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .marquee {
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 2.4rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: #f0eaff;
+      text-shadow: 0 0 6px #c084fc, 0 0 2px #a855f7;
+      font-family: monospace;
+      padding: 12px 0;
+      cursor: pointer;
+    }
+
+    .marquee-content {
+      display: inline-block;
+      padding-left: 20%;
+      animation: scrollLeft var(--speed, 20s) linear infinite;
+      will-change: transform;
+    }
+
+    @keyframes scrollLeft {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+
+    /* Пауза при наведении / касании — удобно прочитать */
+    .marquee:hover .marquee-content,
+    .marquee:active .marquee-content {
+      animation-play-state: paused;
+    }
+
+    /* Панель управления — мягкая карточка */
+    .control-panel {
+      background: rgba(30, 20, 45, 0.7);
+      border-radius: 48px;
+      padding: 20px 24px;
+      backdrop-filter: blur(4px);
+    }
+
+    .control-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      color: #d9caf7;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    input, textarea {
+      width: 100%;
+      background: #2a1b3c;
+      border: 1px solid #7c3aed80;
+      border-radius: 60px;
+      padding: 12px 18px;
+      color: #f3e8ff;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    textarea {
+      border-radius: 32px;
+      resize: vertical;
+      font-family: monospace;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #c084fc;
+      box-shadow: 0 0 0 2px #a855f780;
+    }
+
+    /* Слайдер скорости */
+    input[type="range"] {
+      padding: 0;
+      height: 6px;
+      -webkit-appearance: none;
+      background: #4a2c6d;
+      border-radius: 10px;
+    }
+    input[type="range"]:focus {
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #c084fc;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 6px #a78bfa;
+      border: none;
+    }
+
+    .gradient-select {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .gradient-btn {
+      flex: 1;
+      background: #2a1b3c;
+      border: 1px solid #7c3aed60;
+      border-radius: 60px;
+      padding: 10px;
+      text-align: center;
+      color: #e9d5ff;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .gradient-btn.active {
+      border-color: #c084fc;
+      background: #6b21a5;
+      color: white;
+      box-shadow: 0 0 8px #a855f7;
+    }
+    .gradient-btn:nth-child(1) { background: linear-gradient(135deg, #2e1a47, #1a0b2e); }
+    .gradient-btn:nth-child(2) { background: linear-gradient(135deg, #4c1d5e, #1e1029); }
+    .gradient-btn:nth-child(3) { background: linear-gradient(135deg, #2d2157, #0f0a1f); }
+
+    .save-status {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.75rem;
+      color: #b49ad6;
+      transition: 0.2s;
+    }
+
+    button {
+      background: #8b5cf6;
+      border: none;
+      border-radius: 40px;
+      padding: 10px 20px;
+      color: white;
+      font-weight: bold;
+      font-size: 0.9rem;
+      width: 100%;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 8px;
+    }
+    button:active {
+      transform: scale(0.97);
+      background: #a78bfa;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      color: #e2d1ff;
+      text-align: center;
+    }
+    .footer-hint {
+      text-align: center;
+      font-size: 0.7rem;
+      margin-top: 20px;
+      color: #7c6b9e;
+    }
+  </style>
+</head>
+<body>
+
+<div class="relax-container" id="app">
+  <div class="marquee-stage">
+    <div class="marquee" id="marquee">
+      <div class="marquee-content" id="marqueeText">
+        ✨ плывём в фиолетовой дымке... ✨
+      </div>
+    </div>
+  </div>
+
+  <div class="control-panel">
+    <h2>🌀 настрой релакс 🌀</h2>
+    
+    <div class="control-group">
+      <label>📝 твой текст (что плывёт)</label>
+      <textarea id="userText" rows="2" placeholder="Напиши что-нибудь плавное... например: «тишина...» или любые слова"></textarea>
+    </div>
+
+    <div class="control-group">
+      <label>🐢 скорость → медленнее / быстрее</label>
+      <input type="range" id="speedSlider" min="8" max="45" step="1" value="22">
+      <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+        <span style="color:#b9a3e3;">очень плавно</span>
+        <span style="color:#b9a3e3;">♾️</span>
+        <span style="color:#b9a3e3;">подвижно</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>🎨 градиент фона</label>
+      <div class="gradient-select">
+        <div class="gradient-btn" data-grad="1">мягкий фиолет</div>
+        <div class="gradient-btn" data-grad="2">глубокий сливовый</div>
+        <div class="gradient-btn" data-grad="3">сумеречный лаванда</div>
+      </div>
+    </div>
+
+    <button id="saveBtn">💾 сохранить настройки</button>
+    <div class="save-status" id="saveStatus">всё запомнится в телефоне</div>
+  </div>
+  <div class="footer-hint">
+    👆 нажми на строку — остановится, чтобы прочитать. Отпусти — поплывёт дальше.
+  </div>
+</div>
+
+<script>
+  (function(){
+    // ---- DOM элементы ----
+    const marqueeContent = document.getElementById('marqueeText');
+    const userTextarea = document.getElementById('userText');
+    const speedSlider = document.getElementById('speedSlider');
+    const saveBtn = document.getElementById('saveBtn');
+    const saveStatusDiv = document.getElementById('saveStatus');
+    const gradientBtns = document.querySelectorAll('.gradient-btn');
+    const bodyEl = document.body;
+    const marqueeWrapper = document.querySelector('.marquee');
+
+    // ---- настройки по умолчанию ----
+    const defaults = {
+      text: "✨ плывём в фиолетовой дымке... ✨",
+      speedSec: 22,        // секунды на полный цикл
+      gradient: "1"        // 1,2,3
+    };
+
+    // градиенты
+    const gradients = {
+      "1": "linear-gradient(135deg, #2e1a47 0%, #1a0b2e 100%)",
+      "2": "linear-gradient(135deg, #4c1d5e 0%, #1e1029 100%)",
+      "3": "linear-gradient(135deg, #2d2157 0%, #0f0a1f 100%)"
+    };
+
+    // ---- загрузка сохранённого ----
+    function loadSettings() {
+      let saved = null;
+      try {
+        saved = localStorage.getItem('relax_settings');
+        if(saved) saved = JSON.parse(saved);
+      } catch(e) { console.warn(e); }
+
+      const settings = saved ? { ...defaults, ...saved } : { ...defaults };
+      
+      // применить текст
+      marqueeContent.innerText = settings.text;
+      userTextarea.value = settings.text;
+      
+      // применить скорость
+      speedSlider.value = settings.speedSec;
+      applySpeed(settings.speedSec);
+      
+      // применить градиент
+      setGradient(settings.gradient);
+      
+      // отметить активную кнопку градиента
+      document.querySelectorAll('.gradient-btn').forEach(btn => {
+        if(btn.dataset.grad === settings.gradient) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    function applySpeed(seconds) {
+      const safeSpeed = Math.max(5, Math.min(60, seconds));
+      marqueeWrapper.style.setProperty('--speed', safeSpeed + 's');
+    }
+
+    function setGradient(gradKey) {
+      if(gradients[gradKey]) {
+        bodyEl.style.background = gradients[gradKey];
+      } else {
+        bodyEl.style.background = gradients["1"];
+      }
+    }
+
+    // ---- сохранение всех настроек ----
+    function saveAllSettings() {
+      const newText = userTextarea.value.trim();
+      const finalText = newText === "" ? "🌀 плавный поток... 🌀" : newText;
+      marqueeContent.innerText = finalText;
+      
+      const speedVal = parseFloat(speedSlider.value);
+      const gradKey = document.querySelector('.gradient-btn.active')?.dataset.grad || "1";
+      
+      const settingsToSave = {
+        text: finalText,
+        speedSec: speedVal,
+        gradient: gradKey
+      };
+      
+      localStorage.setItem('relax_settings', JSON.stringify(settingsToSave));
+      
+      // показать статус
+      saveStatusDiv.innerText = '✓ сохранено ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+      setTimeout(() => {
+        if(saveStatusDiv.innerText.includes('сохранено')) {
+          saveStatusDiv.innerText = 'настройки запомнены 🌙';
+        }
+      }, 1800);
+      
+      // применить скорость и фон на всякий случай
+      applySpeed(speedVal);
+      setGradient(gradKey);
+    }
+
+    // ---- обработчики для градиента ----
+    gradientBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        gradientBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const gradVal = btn.dataset.grad;
+        setGradient(gradVal);
+        // автосохранение можно сделать по желанию, но лучше чтобы кнопка сохраняла всё разом.
+        // сделаем подсветку, что нужно нажать "сохранить"
+        saveStatusDiv.innerText = '✨ выбран новый фон, нажми "сохранить" ✨';
+        setTimeout(() => {
+          if(saveStatusDiv.innerText.includes("выбран новый фон")) {
+            if(localStorage.getItem('relax_settings')) 
+              saveStatusDiv.innerText = 'настройки ждут сохранения';
+          }
+        }, 2000);
+      });
+    });
+    
+    // кнопка сохранить
+    saveBtn.addEventListener('click', () => {
+      saveAllSettings();
+    });
+    
+    // при изменении текста или скорости тоже можно автообновлять строку, но без автосохранения в localStorage чтобы не бесить.
+    userTextarea.addEventListener('input', () => {
+      const newText = userTextarea.value.trim();
+      if(newText === "") {
+        marqueeContent.innerText = "🌀 плавный поток... 🌀";
+      } else {
+        marqueeContent.innerText = newText;
+      }
+      // подсказка, что не сохранено
+      saveStatusDiv.innerText = '✏️ текст изменён, нажми "сохранить"';
+      setTimeout(() => {
+        if(saveStatusDiv.innerText.includes("текст изменён")) {
+          saveStatusDiv.innerText = 'нажми 💾 для сохранения';
+        }
+      }, 1500);
+    });
+    
+    speedSlider.addEventListener('input', (e) => {
+      const val = e.target.value;
+      applySpeed(val);
+      saveStatusDiv.innerText = '🐢 скорость изменена, сохрани';
+      setTimeout(() => {
+        if(saveStatusDiv.innerText.includes('скорость изменена'))
+          saveStatusDiv.innerText = 'готово к сохранению';
+      }, 1200);
+    });
+    
+    // инициализация и загрузка
+    loadSettings();
+    
+    // дополнительный трюк: чтобы строка была бесконечной, дублируем контент если он коротковат для плавности
+    function ensureLongContent() {
+      let text = marqueeContent.innerText;
+      if(text.length < 15) {
+        // делаем более плавное повторение
+        let repeated = text + '   ✦   ' + text + '   ✦   ' + text;
+        marqueeContent.innerText = repeated;
+        // но при сохранении оригинал берётся из textarea, не переживай
+      }
+    }
+    // следим за обновлением текста
+    const observer = new MutationObserver(() => {
+      let txt = marqueeContent.innerText;
+      if(txt && txt.length < 20 && !txt.includes('✦')) {
+        marqueeContent.innerText = txt + '   ✦   ' + txt;
+      }
+    });
+    observer.observe(marqueeContent, { childList: true, subtree: true, characterData: true });
+    // первичный вызов
+    setTimeout(ensureLongContent, 100);
+  })();
+</script>
+
+<!-- Service Worker для PWA (офлайн + установка) -->
+<script>
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.log("SW не зарегистрирован (это нормально для файла)", err));
+    // но если открыто как file://, то sw не сработает — создадим динамический blob? для PWA лучше простой fallback.
+    // однако для 100% PWA на локальном файле не обязательно. Добавим фейковый регистратор без ошибок.
+    if(window.location.protocol === 'file:') {
+      console.log("PWA работает только при HTTPS или localhost, но приложение всё равно установится как обычная веб-страница с иконкой вручную через 'Добавить на экран дома'");
+    }
+  }
+  
+  // быстрый динамический Service Worker если браузер позволяет и протокол подходящий
+  if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    const swCode = `self.addEventListener('fetch', event => { event.respondWith(fetch(event.request).catch(() => caches.match(event.request))); });`;
+    const blob = new Blob([swCode], {type: 'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).then(reg => {
+      console.log("PWA service worker готов", reg);
+    }).catch(err => console.log("SW не зарегистрирован", err));
+  }
+</script>
+</body>
+</html>
