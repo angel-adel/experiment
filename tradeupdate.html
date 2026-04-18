@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>📈 Симулятор трейдера</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #0a0f1c;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+        .container {
+            background: #0f0f1a;
+            border-radius: 25px;
+            padding: 15px;
+            max-width: 600px;
+            width: 100%;
+            border: 2px solid #2ecc71;
+        }
+        canvas {
+            background: #1a1a2e;
+            border-radius: 15px;
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: auto;
+            border: 1px solid #2ecc71;
+        }
+        .asset-info {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f39c12;
+        }
+        .change {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .change.up { color: #2ecc71; }
+        .change.down { color: #e74c3c; }
+        
+        .portfolio {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .portfolio-item {
+            text-align: center;
+            flex: 1;
+            min-width: 80px;
+        }
+        .portfolio-label {
+            font-size: 10px;
+            color: #aaa;
+        }
+        .portfolio-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2ecc71;
+        }
+        
+        .trade-panel {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .trade-control {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .trade-input {
+            background: #0a0a1a;
+            color: #f39c12;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            width: 120px;
+            padding: 10px;
+            border: 2px solid #2ecc71;
+            border-radius: 15px;
+        }
+        .trade-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .buy-btn {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+        .sell-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            flex: 1;
+            background: #34495e;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .reset-btn { background: #e74c3c; }
+        .pause-btn { background: #f39c12; }
+        .newgame-btn { background: #27ae60; }
+        
+        .news {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #ffd700;
+            text-align: center;
+        }
+        .status {
+            font-size: 11px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .start-bank {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .start-input {
+            background: #0a0a1a;
+            color: #f39c12;
+            font-size: 16px;
+            text-align: center;
+            width: 120px;
+            padding: 8px;
+            border: 2px solid #2ecc71;
+            border-radius: 15px;
+        }
+        .speed-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .speed-slider {
+            width: 200px;
+            height: 6px;
+            border-radius: 10px;
+            background: #2ecc71;
+        }
+        @media (max-width: 500px) {
+            .price { font-size: 18px; }
+            .portfolio-value { font-size: 14px; }
+            .trade-input { width: 90px; font-size: 16px; }
+            .buy-btn, .sell-btn { padding: 8px 12px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <canvas id="chartCanvas" width="550" height="250"></canvas>
+    
+    <div class="asset-info">
+        <span style="color:white;">📈 АКЦИЯ TECH CORP</span>
+        <div>
+            <span class="price" id="currentPrice">100.00</span>
+            <span class="change" id="priceChange">+0.00</span>
+        </div>
+    </div>
+    
+    <div class="portfolio">
+        <div class="portfolio-item">
+            <div class="portfolio-label">💰 БАЛАНС</div>
+            <div class="portfolio-value" id="balance">10000</div>
+        </div>
+        <div class="portfolio-item">
+            <div class="portfolio-label">📊 АКЦИЙ</div>
+            <div class="portfolio-value" id="shares">0</div>
+        </div>
+        <div class="portfolio-item">
+            <div class="portfolio-label">💎 КАПИТАЛ</div>
+            <div class="portfolio-value" id="totalCapital">10000</div>
+        </div>
+    </div>
+    
+    <div class="trade-panel">
+        <div class="trade-control">
+            <input type="number" id="tradeAmount" class="trade-input" value="1" min="1" step="1">
+        </div>
+        <div class="trade-buttons">
+            <button id="buyBtn" class="buy-btn">🟢 КУПИТЬ</button>
+            <button id="sellBtn" class="sell-btn">🔴 ПРОДАТЬ</button>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="resetBtn" class="reset-btn">🔄 СБРОС</button>
+        <button id="pauseBtn" class="pause-btn">⏸️ ПАУЗА</button>
+    </div>
+    
+    <div class="speed-control">
+        <span style="color:white;">⚡ СКОРОСТЬ:</span>
+        <input type="range" id="speedSlider" class="speed-slider" min="1" max="10" value="3" step="1">
+        <span id="speedValue" style="color:#2ecc71;">3</span>
+        <span style="color:white;">сек</span>
+    </div>
+    
+    <div class="start-bank">
+        <span style="color:white;">💰 СТАРТОВЫЙ КАПИТАЛ:</span>
+        <input type="number" id="startCapitalInput" class="start-input" value="10000" min="100" max="1000000">
+        <button id="newGameBtn" class="newgame-btn">🆕 НОВАЯ ИГРА</button>
+    </div>
+    
+    <div class="news" id="newsArea">
+        📰 Добро пожаловать! Покупай дёшево, продавай дорого.
+    </div>
+    <div class="status" id="statusMsg">
+        📈 График обновляется каждые 3 секунды
+    </div>
+</div>
+<script>
+    // ----- НАСТРОЙКИ -----
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 550;
+    canvas.height = 250;
+    
+    // ----- ПЕРЕМЕННЫЕ -----
+    let balance = 10000;
+    let shares = 0;
+    let startCapital = 10000;
+    
+    let currentPrice = 100.00;
+    let priceHistory = [100];
+    let lastPrice = 100;
+    
+    let trendCycle = 0;
+    let trendStrength = 0;
+    let currentTrend = "floating";
+    let volatility = 2;
+    
+    let isRunning = true;
+    let updateInterval = 3000; // миллисекунды
+    let updateTimer = null;
+    
+    // ----- DOM ЭЛЕМЕНТЫ -----
+    const currentPriceSpan = document.getElementById('currentPrice');
+    const priceChangeSpan = document.getElementById('priceChange');
+    const balanceSpan = document.getElementById('balance');
+    const sharesSpan = document.getElementById('shares');
+    const totalCapitalSpan = document.getElementById('totalCapital');
+    const newsArea = document.getElementById('newsArea');
+    const statusMsg = document.getElementById('statusMsg');
+    
+    const tradeAmountInput = document.getElementById('tradeAmount');
+    const buyBtn = document.getElementById('buyBtn');
+    const sellBtn = document.getElementById('sellBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const startCapitalInput = document.getElementById('startCapitalInput');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValueSpan = document.getElementById('speedValue');
+    
+    // ----- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ -----
+    function updateUI() {
+        balanceSpan.innerText = Math.floor(balance);
+        sharesSpan.innerText = shares;
+        let totalCapital = balance + (shares * currentPrice);
+        totalCapitalSpan.innerText = Math.floor(totalCapital);
+        currentPriceSpan.innerText = currentPrice.toFixed(2);
+        
+        let change = ((currentPrice - lastPrice) / lastPrice * 100).toFixed(2);
+        let changeVal = (currentPrice - lastPrice).toFixed(2);
+        if (change > 0) {
+            priceChangeSpan.innerHTML = `▲ +${changeVal} (+${change}%)`;
+            priceChangeSpan.className = "change up";
+        } else if (change < 0) {
+            priceChangeSpan.innerHTML = `▼ ${changeVal} (${change}%)`;
+            priceChangeSpan.className = "change down";
+        } else {
+            priceChangeSpan.innerHTML = `0.00 (0%)`;
+            priceChangeSpan.className = "change";
+        }
+        lastPrice = currentPrice;
+    }
+    
+    function showMessage(msg, isError) {
+        statusMsg.innerText = msg;
+        statusMsg.style.color = isError ? "#ff6666" : "#aaa";
+        setTimeout(() => {
+            if (statusMsg.innerText === msg) {
+                statusMsg.innerText = `📈 График обновляется каждые ${updateInterval/1000} секунды`;
+                statusMsg.style.color = "#aaa";
+            }
+        }, 2000);
+    }
+    
+    function updateTotalCapital() {
+        let total = balance + (shares * currentPrice);
+        totalCapitalSpan.innerText = Math.floor(total);
+    }
+    // ----- ГЕНЕРАТОР ЦЕНЫ -----
+    function generatePrice() {
+        if (!isRunning) return;
+        
+        // Меняем тренд
+        trendCycle++;
+        if (trendCycle > 30 + Math.random() * 40) {
+            trendCycle = 0;
+            let rand = Math.random();
+            if (rand < 0.33) {
+                currentTrend = "up";
+                trendStrength = 0.3 + Math.random() * 0.4;
+                newsArea.innerHTML = "📈 РЫНОК РАСТЁТ! БЫЧИЙ ТРЕНД";
+            } else if (rand < 0.66) {
+                currentTrend = "down";
+                trendStrength = -0.3 - Math.random() * 0.4;
+                newsArea.innerHTML = "📉 РЫНОК ПАДАЕТ! МЕДВЕЖИЙ ТРЕНД";
+            } else {
+                currentTrend = "floating";
+                trendStrength = 0;
+                newsArea.innerHTML = "🟡 РЫНОК В БОКОВИКЕ";
+            }
+        }
+        
+        // Случайные новости
+        if (Math.random() < 0.05) {
+            if (Math.random() < 0.5) {
+                let spike = 5 + Math.random() * 10;
+                currentPrice *= (1 + spike / 100);
+                newsArea.innerHTML = `📰 🟢 ХОРОШАЯ НОВОСТЬ! Акция выросла на +${spike.toFixed(1)}%`;
+                showMessage(`🟢 Акция выросла на +${spike.toFixed(1)}%`, false);
+            } else {
+                let drop = 5 + Math.random() * 10;
+                currentPrice *= (1 - drop / 100);
+                newsArea.innerHTML = `📰 🔴 ПЛОХАЯ НОВОСТЬ! Акция упала на -${drop.toFixed(1)}%`;
+                showMessage(`🔴 Акция упала на -${drop.toFixed(1)}%`, true);
+            }
+        }
+        
+        // Основное изменение цены
+        let change = (Math.random() - 0.5) * volatility;
+        change += trendStrength * 0.5;
+        change += (100 - currentPrice) * 0.05 / 100;
+        
+        currentPrice *= (1 + change / 100);
+        
+        // Ограничения
+        if (currentPrice < 10) currentPrice = 10;
+        if (currentPrice > 500) currentPrice = 500;
+        
+        // Добавляем в историю
+        priceHistory.push(currentPrice);
+        if (priceHistory.length > 50) priceHistory.shift();
+        
+        updateUI();
+        drawChart();
+    }
+    // ----- ТОРГОВЫЕ ОПЕРАЦИИ -----
+    function buyShares() {
+        let amount = parseInt(tradeAmountInput.value);
+        if (isNaN(amount) || amount <= 0) {
+            showMessage("❌ Введите корректное количество", true);
+            return;
+        }
+        
+        let cost = amount * currentPrice;
+        if (cost > balance) {
+            showMessage(`❌ Недостаточно средств! Нужно ${cost.toFixed(2)}`, true);
+            return;
+        }
+        
+        balance -= cost;
+        shares += amount;
+        updateUI();
+        showMessage(`🟢 Куплено ${amount} акций по ${currentPrice.toFixed(2)}`, false);
+    }
+    
+    function sellShares() {
+        let amount = parseInt(tradeAmountInput.value);
+        if (isNaN(amount) || amount <= 0) {
+            showMessage("❌ Введите корректное количество", true);
+            return;
+        }
+        
+        if (amount > shares) {
+            showMessage(`❌ У вас только ${shares} акций`, true);
+            return;
+        }
+        
+        let revenue = amount * currentPrice;
+        balance += revenue;
+        shares -= amount;
+        updateUI();
+        showMessage(`🔴 Продано ${amount} акций по ${currentPrice.toFixed(2)}`, false);
+    }
+    // ----- ОТРИСОВКА ГРАФИКА -----
+    function drawChart() {
+        if (priceHistory.length === 0) return;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "#1a1a2e";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.strokeStyle = "#2c3e50";
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i <= 4; i++) {
+            let y = canvas.height - (i * canvas.height / 4);
+            ctx.beginPath();
+            ctx.moveTo(30, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+        
+        let minPrice = Math.min(...priceHistory);
+        let maxPrice = Math.max(...priceHistory);
+        let range = maxPrice - minPrice;
+        if (range < 1) range = 1;
+        
+        let stepX = (canvas.width - 30) / (priceHistory.length - 1);
+        
+        ctx.beginPath();
+        ctx.strokeStyle = "#2ecc71";
+        ctx.lineWidth = 2;
+        
+        for (let i = 0; i < priceHistory.length; i++) {
+            let x = 30 + i * stepX;
+            let y = canvas.height - ((priceHistory[i] - minPrice) / range) * (canvas.height - 40) - 10;
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+        
+        ctx.fillStyle = "#f39c12";
+        for (let i = 0; i < priceHistory.length; i += 5) {
+            let x = 30 + i * stepX;
+            let y = canvas.height - ((priceHistory[i] - minPrice) / range) * (canvas.height - 40) - 10;
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.fillStyle = "#2ecc71";
+        ctx.font = "10px Arial";
+        ctx.fillText(`Текущая: ${currentPrice.toFixed(2)}`, canvas.width - 90, 20);
+        ctx.fillStyle = "#aaa";
+        ctx.fillText(`Мин: ${minPrice.toFixed(2)}`, 10, 20);
+        ctx.fillText(`Макс: ${maxPrice.toFixed(2)}`, 10, 35);
+    }
+    // ----- УПРАВЛЕНИЕ -----
+    function resetGame() {
+        balance = startCapital;
+        shares = 0;
+        currentPrice = 100;
+        priceHistory = [100];
+        lastPrice = 100;
+        trendCycle = 0;
+        trendStrength = 0;
+        currentTrend = "floating";
+        updateUI();
+        drawChart();
+        showMessage("🔄 Игра сброшена", false);
+        newsArea.innerHTML = "📰 Рынок перезапущен. Начинайте торговлю!";
+    }
+    
+    function newGame() {
+        let newStart = parseInt(startCapitalInput.value);
+        if (isNaN(newStart)) newStart = 10000;
+        if (newStart < 100) newStart = 100;
+        if (newStart > 1000000) newStart = 1000000;
+        
+        startCapital = newStart;
+        balance = startCapital;
+        shares = 0;
+        currentPrice = 100;
+        priceHistory = [100];
+        lastPrice = 100;
+        trendCycle = 0;
+        trendStrength = 0;
+        currentTrend = "floating";
+        updateUI();
+        drawChart();
+        showMessage(`🆕 Новая игра! Стартовый капитал: ${startCapital}`, false);
+        newsArea.innerHTML = "📰 Добро пожаловать! Покупай дёшево, продавай дорого!";
+    }
+    
+    function togglePause() {
+        isRunning = !isRunning;
+        pauseBtn.innerText = isRunning ? "⏸️ ПАУЗА" : "▶️ ПУСК";
+        pauseBtn.style.background = isRunning ? "#f39c12" : "#2ecc71";
+        showMessage(isRunning ? "▶️ Рынок открыт" : "⏸️ Рынок на паузе", false);
+    }
+    
+    function changeSpeed() {
+        let newSpeed = parseInt(speedSlider.value);
+        updateInterval = newSpeed * 1000;
+        speedValueSpan.innerText = newSpeed;
+        statusMsg.innerText = `📈 График обновляется каждые ${newSpeed} секунды`;
+        
+        // Перезапускаем таймер
+        if (updateTimer) clearInterval(updateTimer);
+        if (isRunning) {
+            updateTimer = setInterval(() => {
+                generatePrice();
+            }, updateInterval);
+        }
+    }
+    
+    // ----- ОБРАБОТЧИКИ -----
+    buyBtn.addEventListener('click', buyShares);
+    sellBtn.addEventListener('click', sellShares);
+    resetBtn.addEventListener('click', resetGame);
+    pauseBtn.addEventListener('click', togglePause);
+    newGameBtn.addEventListener('click', newGame);
+    speedSlider.addEventListener('input', changeSpeed);
+    
+    // ----- ЗАПУСК -----
+    priceHistory.push(100);
+    updateUI();
+    drawChart();
+    
+    updateTimer = setInterval(() => {
+        generatePrice();
+    }, updateInterval);
+    
+    showMessage("📈 Симулятор трейдера запущен! Скорость можно менять ползунком", false);
+</script>
+</body>
+</html>
