@@ -74,12 +74,6 @@ REPORT_DIR = "Reports"
 if not os.path.exists(REPORT_DIR):
     os.makedirs(REPORT_DIR)
 
-# ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА ЛОГИРОВАНИЯ
-test_log_path = os.path.join(LOG_DIR, "ushatik.log")
-with open(test_log_path, 'w', encoding='utf-8') as f:
-    f.write("ТЕСТОВАЯ ЗАПИСЬ: Логирование работает\n")
-log_info("Проверка логирования: эта запись должна быть в файле")
-
 log_info("Программа запущена (Trouble Messenger 3.2)")
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ДИАГНОСТИКИ ==========
@@ -343,24 +337,28 @@ def send_email(from_email, password, to_emails, cc_email, description, screensho
 
         # Принудительно читаем последние 30 строк (с запасом)
         try:
-            with open(log_file_path, 'r', encoding='utf-8') as f:
-                all_lines = f.readlines()
-            last_lines = all_lines[-30:] if len(all_lines) >= 30 else all_lines
-            last_log = ''.join(last_lines)
-            if not last_log.strip():
-                last_log = "(Лог пуст)"
+            # Проверим, существует ли файл
+            log_file_path = os.path.join(LOG_DIR, "ushatik.log")
+            log_info(f"Отладка: путь к логу = {os.path.abspath(log_file_path)}")
+            log_info(f"Отладка: файл существует = {os.path.exists(log_file_path)}")
+            
+            if os.path.exists(log_file_path):
+                with open(log_file_path, 'r', encoding='utf-8') as f:
+                    all_lines = f.readlines()
+                log_info(f"Отладка: прочитано строк = {len(all_lines)}")
+                last_lines = all_lines[-30:] if len(all_lines) >= 30 else all_lines
+                last_log = ''.join(last_lines)
+                if not last_log.strip():
+                    last_log = "(Лог пуст)"
+                    log_info("Отладка: лог пуст (нет содержимого)")
+                else:
+                    log_info(f"Отладка: последние строки лога:\n{last_log[:200]}...")
+            else:
+                last_log = "(Лог-файл отсутствует)"
+                log_info("Отладка: лог-файл не найден")
         except Exception as e:
             last_log = f"(Ошибка чтения лога: {e})"
-        
-        body = f"""Отчёт от сотрудника: {cc_email}
-Дата и время: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-Описание проблемы:
-{description}
-
---- Последние события из лога (30 строк) ---
-{last_log}
-
+            log_error(f"Отладка: ошибка чтения лога - {e}")
 ---
 Скриншот и полный лог-файл во вложениях.
 """
