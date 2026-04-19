@@ -328,7 +328,23 @@ def send_email(from_email, password, to_emails, cc_email, description, screensho
         msg['Cc'] = cc_email
         msg['Subject'] = f"Trouble Report от {cc_email} ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
 
-        last_log = get_last_log_lines(30)
+        # Принудительно создаём лог-файл, если его нет
+        log_file_path = os.path.join(LOG_DIR, "ushatik.log")
+        if not os.path.exists(log_file_path):
+            with open(log_file_path, 'w', encoding='utf-8') as f:
+                f.write("=== Лог-файл создан автоматически ===\n")
+            log_info("Лог-файл не существовал, создан новый.")
+
+        # Принудительно читаем последние 30 строк (с запасом)
+        try:
+            with open(log_file_path, 'r', encoding='utf-8') as f:
+                all_lines = f.readlines()
+            last_lines = all_lines[-30:] if len(all_lines) >= 30 else all_lines
+            last_log = ''.join(last_lines)
+            if not last_log.strip():
+                last_log = "(Лог пуст)"
+        except Exception as e:
+            last_log = f"(Ошибка чтения лога: {e})"
         
         body = f"""Отчёт от сотрудника: {cc_email}
 Дата и время: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -344,16 +360,21 @@ def send_email(from_email, password, to_emails, cc_email, description, screensho
 """
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
+        # Вложение: скриншот
         with open(screenshot_path, 'rb') as f:
             img = MIMEImage(f.read(), name=os.path.basename(screenshot_path))
             msg.attach(img)
         
-        log_file_path = os.path.join(LOG_DIR, "ushatik.log")
+        # Вложение: лог-файл
         if os.path.exists(log_file_path):
             with open(log_file_path, 'rb') as f:
-                log_attachment = MIMEText(f.read().decode('utf-8', errors='replace'), 'plain', 'utf-8')
+                log_content = f.read().decode('utf-8', errors='replace')
+                log_attachment = MIMEText(log_content, 'plain', 'utf-8')
                 log_attachment.add_header('Content-Disposition', 'attachment', filename='ushatik.log')
                 msg.attach(log_attachment)
+            log_info("Лог-файл прикреплён к письму")
+        else:
+            log_warning("Лог-файл не найден, вложение не добавлено")
 
         all_recipients = to_emails + [cc_email]
         with smtplib.SMTP(smtp_server, smtp_port) as server:
