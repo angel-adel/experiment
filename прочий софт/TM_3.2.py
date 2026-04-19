@@ -74,6 +74,12 @@ REPORT_DIR = "Reports"
 if not os.path.exists(REPORT_DIR):
     os.makedirs(REPORT_DIR)
 
+# ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА ЛОГИРОВАНИЯ
+test_log_path = os.path.join(LOG_DIR, "ushatik.log")
+with open(test_log_path, 'w', encoding='utf-8') as f:
+    f.write("ТЕСТОВАЯ ЗАПИСЬ: Логирование работает\n")
+log_info("Проверка логирования: эта запись должна быть в файле")
+
 log_info("Программа запущена (Trouble Messenger 3.2)")
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ДИАГНОСТИКИ ==========
