@@ -17,7 +17,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
-# ========== НАСТРОЙКИ SMTP (как в старой версии) ==========
+# ========== НАСТРОЙКИ SMTP ==========
 SMTP_SERVERS = {
     'gmail.com': ('smtp.gmail.com', 587),
     'yandex.ru': ('smtp.yandex.ru', 587),
@@ -74,7 +74,7 @@ REPORT_DIR = "Reports"
 if not os.path.exists(REPORT_DIR):
     os.makedirs(REPORT_DIR)
 
-log_info("Программа запущена (гибридная версия 2.1 с отправкой логов)")
+log_info("Программа запущена (Trouble Messenger 3.2)")
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ДИАГНОСТИКИ ==========
 def get_local_ip():
@@ -162,7 +162,6 @@ def take_screenshot():
     return filename
 
 def get_last_log_lines(n=30):
-    """Возвращает последние n строк из лог-файла"""
     log_file_path = os.path.join(LOG_DIR, "ushatik.log")
     if not os.path.exists(log_file_path):
         return "Лог-файл ещё не создан."
@@ -283,7 +282,6 @@ def build_html_report(description, screenshot_path, mode='quick'):
     return html
 
 def save_offline_report(description, mode):
-    """Сохраняет отчёт на диск (офлайн-режим)"""
     if not description.strip():
         log_warning("Попытка сохранить отчёт с пустым описанием")
         messagebox.showwarning("Внимание", "Опишите проблему!")
@@ -301,7 +299,6 @@ def save_offline_report(description, mode):
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(html_content)
         
-        # Вставляем скриншот как base64
         with open(screenshot_file, "rb") as img_f:
             img_data = base64.b64encode(img_f.read()).decode()
             with open(filepath, 'r', encoding='utf-8') as f:
@@ -331,7 +328,6 @@ def send_email(from_email, password, to_emails, cc_email, description, screensho
         msg['Cc'] = cc_email
         msg['Subject'] = f"Trouble Report от {cc_email} ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
 
-        # Получаем последние строки лога
         last_log = get_last_log_lines(30)
         
         body = f"""Отчёт от сотрудника: {cc_email}
@@ -348,12 +344,10 @@ def send_email(from_email, password, to_emails, cc_email, description, screensho
 """
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
-        # Вложение: скриншот
         with open(screenshot_path, 'rb') as f:
             img = MIMEImage(f.read(), name=os.path.basename(screenshot_path))
             msg.attach(img)
         
-        # Вложение: лог-файл (если существует)
         log_file_path = os.path.join(LOG_DIR, "ushatik.log")
         if os.path.exists(log_file_path):
             with open(log_file_path, 'rb') as f:
@@ -374,13 +368,11 @@ def send_email(from_email, password, to_emails, cc_email, description, screensho
         raise e
 
 def send_report_by_email(description, mode, from_email, password, to_emails, cc_email):
-    """Отправляет отчёт по почте (используется скриншот и описание)"""
     if not description.strip():
         log_warning("Попытка отправить письмо с пустым описанием")
         messagebox.showwarning("Внимание", "Опишите проблему!")
         return False
     
-    # Валидация email'ов
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', from_email):
         messagebox.showwarning("Ошибка", "Некорректный email отправителя")
         return False
@@ -418,43 +410,36 @@ def send_report_by_email(description, mode, from_email, password, to_emails, cc_
 class TroubleMessenger:
     def __init__(self, root):
         self.root = root
-        self.root.title("Trouble Messenger — Ушастик v2.1 (гибрид)")
+        self.root.title("Trouble Messenger 3.2 — Ушастик")
         self.root.geometry("550x600")
         self.root.resizable(False, False)
         
-        # Поле для описания
         tk.Label(root, text="Опишите проблему:", font=("Arial", 12)).pack(pady=10)
         self.description = scrolledtext.ScrolledText(root, height=8, width=60, font=("Arial", 10))
         self.description.pack(pady=5, padx=10)
         
-        # Поле для email отправителя (технический)
         tk.Label(root, text="Ваш технический email (от кого идёт отправка):", font=("Arial", 10)).pack(pady=(10,0))
         self.from_email = tk.Entry(root, width=50, font=("Arial", 10))
         self.from_email.pack(pady=5)
         
-        # Поле для пароля приложения
         tk.Label(root, text="Пароль приложения:", font=("Arial", 10)).pack(pady=(5,0))
         self.password = tk.Entry(root, width=50, font=("Arial", 10), show="*")
         self.password.pack(pady=5)
         
-        # Поле для email разработчиков
         tk.Label(root, text="Кому отправить (разработчики):", font=("Arial", 10)).pack(pady=(10,0))
         self.to_developers = tk.Entry(root, width=50, font=("Arial", 10))
         self.to_developers.pack(pady=5)
         tk.Label(root, text="Можно несколько через запятую", font=("Arial", 8), fg="gray").pack()
         
-        # Поле для копии себе
         tk.Label(root, text="Ваш email (копия себе):", font=("Arial", 10)).pack(pady=(10,0))
         self.user_email = tk.Entry(root, width=50, font=("Arial", 10))
         self.user_email.pack(pady=5)
         
-        # Чекбокс тихого режима (сворачивание окна)
         self.stealth_var = tk.BooleanVar(value=False)
         self.stealth_check = tk.Checkbutton(root, text="Сворачивать окно перед скриншотом (тихий режим)",
                                             variable=self.stealth_var)
         self.stealth_check.pack(pady=10)
         
-        # Кнопки действий
         btn_frame = tk.Frame(root)
         btn_frame.pack(pady=10)
         
@@ -474,19 +459,16 @@ class TroubleMessenger:
                                     bg="#2ecc71", fg="white", font=("Arial", 10), width=16)
         self.folder_btn.pack(side=tk.LEFT, padx=5)
         
-        # Статусная строка
         self.status = tk.Label(root, text="Готов", bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
         
-        log_info("Интерфейс программы загружен (гибридная версия 2.1 с отправкой логов)")
+        log_info("Интерфейс программы загружен (Trouble Messenger 3.2)")
     
     def minimize_window(self):
-        """Сворачивает окно (тихий режим)"""
         self.root.iconify()
         self.root.update()
     
     def restore_window(self):
-        """Разворачивает окно"""
         self.root.deiconify()
         self.root.lift()
         self.root.focus_force()
@@ -539,7 +521,6 @@ def on_closing():
     log_info("Программа закрыта пользователем")
     root.destroy()
 
-# ========== ЗАПУСК ==========
 if __name__ == "__main__":
     root = tk.Tk()
     app = TroubleMessenger(root)
