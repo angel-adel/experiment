@@ -86,19 +86,31 @@ class ScriptonizerLite:
                        width=btn_width,
                        command=lambda t=script['text'], n=script['name']: self.paste_to_chat(t, n))
         btn.pack(pady=5, padx=5)
-    
+        
     def paste_to_chat(self, text, script_name):
+        import ctypes
+        
         self.status_label.config(text="⏳ Вставка... (курсор должен быть в поле ввода)")
         self.root.update()
         
+        # Копируем в буфер
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
         self.root.update()
-        time.sleep(0.1)
-        
-        pyautogui.hotkey('ctrl', 'v')
         time.sleep(0.05)
         
+        # Эмулируем нажатие Ctrl+V через keybd_event
+        VK_CONTROL = 0x11
+        VK_V = 0x56
+        KEYEVENTF_KEYUP = 0x0002
+        
+        ctypes.windll.user32.keybd_event(VK_CONTROL, 0, 0, 0)   # Ctrl нажат
+        ctypes.windll.user32.keybd_event(VK_V, 0, 0, 0)        # V нажат
+        time.sleep(0.02)
+        ctypes.windll.user32.keybd_event(VK_V, 0, KEYEVENTF_KEYUP, 0)   # V отпущен
+        ctypes.windll.user32.keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0) # Ctrl отпущен
+        
+        time.sleep(0.05)
         self.status_label.config(text=f"✅ Вставлено: {script_name}")
         self.root.after(2000, lambda: self.status_label.config(text="Готов"))
     
