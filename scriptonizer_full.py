@@ -107,14 +107,28 @@ class ScriptonizerLite:
                        command=lambda t=script['text'], n=script['name']: self.paste_to_chat(t, n))
         btn.pack(pady=5, padx=5)
     
-    def paste_to_chat(self, text, script_name):
+       def paste_to_chat(self, text, script_name):
+                   # Небольшая подсказка, если фокус потерян
+        self.status_label.config(text="⏳ Вставка... (удерживайте курсор в поле ввода)")
+        self.root.update()
+           
+        # Копируем в буфер
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
         self.root.update()
+        time.sleep(0.1)
+        
+        # Делаем активным последнее окно (где был курсор)
+        pyautogui.click()  # левый клик там, где курсор мыши
         time.sleep(0.05)
         
+        # Пробуем вставить через Ctrl+V
         pyautogui.hotkey('ctrl', 'v')
         
+        # Небольшая задержка, чтобы вставка успела отработать
+        time.sleep(0.05)
+        
+        # Статус
         self.status_label.config(text=f"✅ Вставлено: {script_name}")
         self.root.after(2000, lambda: self.status_label.config(text="Готов"))
     
